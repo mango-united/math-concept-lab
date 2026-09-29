@@ -1,0 +1,978 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="원에 대한 반전의 정의, 핵심 성질, 공통수학2 적용을 점을 직접 끌며 확인하는 인터랙티브 노트.">
+<title>반전 기하 실험실</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hahmlet:wght@500;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;600&family=STIX+Two+Text:ital,wght@0,400;0,600;1,400;1,600&display=swap">
+<style>
+html{color-scheme:light}
+body{margin:0}
+[hidden]{display:none!important}
+img{max-width:100%}
+.back{display:inline-block;font-size:13.5px;color:var(--muted);text-decoration:none;margin-bottom:4px}
+.back:hover{color:var(--fg)}
+.back:focus-visible{outline:2px solid var(--orig);outline-offset:2px}
+
+/* Layout: 제도용 모눈 노트 — 읽기 열(44rem) 사이사이에 넓은 실험 패널(그림 + 실시간 수치판)이 놓인다.
+   원래 도형은 파란 잉크, 반전된 도형은 채점용 빨간 펜, 핵심 값과 보조점은 호박색. */
+:root{
+  --bg:#F3F5F8;
+  --panel:#FFFFFF;
+  --fg:#142033;
+  --muted:#586477;
+  --rule:#D3DAE4;
+  --grid:#E8ECF2;
+  --orig:#2150C2;
+  --orig-soft:rgba(33,80,194,.11);
+  --img:#C22B58;
+  --img-soft:rgba(194,43,88,.11);
+  --key:#A35F00;
+  --ok:#1C7C52;
+  --ok-soft:rgba(28,124,82,.12);
+  --font-display:"Hahmlet","Noto Serif KR","AppleMyungjo",serif;
+  --font-body:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+  --font-mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --font-math:"STIX Two Text","Times New Roman",serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0E131B;--panel:#151C27;--fg:#E3E8F0;--muted:#98A4B6;--rule:#2B3546;--grid:#1C2533;
+    --orig:#88AAFF;--orig-soft:rgba(136,170,255,.15);--img:#FF86A7;--img-soft:rgba(255,134,167,.15);
+    --key:#F2B652;--ok:#5ACB8F;--ok-soft:rgba(90,203,143,.15);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0E131B;--panel:#151C27;--fg:#E3E8F0;--muted:#98A4B6;--rule:#2B3546;--grid:#1C2533;
+  --orig:#88AAFF;--orig-soft:rgba(136,170,255,.15);--img:#FF86A7;--img-soft:rgba(255,134,167,.15);
+  --key:#F2B652;--ok:#5ACB8F;--ok-soft:rgba(90,203,143,.15);
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--font-body);font-size:16px;line-height:1.75;-webkit-font-smoothing:antialiased}
+.wrap{max-width:68rem;margin:0 auto;padding-inline:clamp(16px,4vw,40px);padding-block:36px 96px}
+main{display:grid;gap:76px}
+section{display:grid;gap:14px;scroll-margin-top:16px}
+.prose{max-width:44rem;min-width:0}
+.prose p{margin:0 0 .75em}
+.prose p:last-child{margin-bottom:0}
+.prose ul,.prose ol{margin:0 0 .75em;padding-left:1.3em;display:grid;gap:4px}
+.m{font-family:var(--font-math);font-size:1.08em;white-space:nowrap}
+.m i{font-style:italic}
+.kicker{margin:0;font-size:13px;font-weight:600;letter-spacing:.08em;color:var(--muted)}
+h1{font-family:var(--font-display);font-weight:700;font-size:clamp(2.1rem,6vw,3.3rem);line-height:1.12;margin:0;text-wrap:balance;letter-spacing:-.01em}
+h2{font-family:var(--font-display);font-weight:700;font-size:clamp(1.45rem,3.4vw,1.95rem);line-height:1.25;margin:0;text-wrap:balance}
+h3{font-size:1rem;margin:0;font-weight:600}
+.hero{display:grid;gap:16px;padding-block:8px 4px}
+.lead{font-size:1.06rem;color:var(--fg);max-width:40rem;margin:0}
+.defn{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 18px;padding:14px 0 4px;border-top:1px solid var(--rule)}
+.defn .big{font-family:var(--font-math);font-size:clamp(1.9rem,5.5vw,2.8rem);line-height:1.1;letter-spacing:.01em}
+.defn .big i{font-style:italic}
+.defn .sub{color:var(--muted);font-size:14px}
+.legend{display:flex;flex-wrap:wrap;gap:8px 20px;font-size:13.5px;color:var(--muted);margin:0;padding:0;list-style:none}
+.legend li{display:inline-flex;align-items:center;gap:8px}
+.sw{display:inline-block;width:22px;height:0;border-top:3px solid currentColor}
+.sw.orig{color:var(--orig)}.sw.img{color:var(--img)}.sw.key{color:var(--key)}
+.sw.dash{border-top:2px dashed var(--muted)}
+.ring{display:inline-block;width:14px;height:14px;border-radius:50%;border:2.5px solid var(--orig);background:var(--panel)}
+.toc{display:flex;flex-wrap:wrap;gap:8px}
+.toc a{font-size:13.5px;color:var(--fg);text-decoration:none;border:1px solid var(--rule);border-radius:999px;padding:5px 12px;background:var(--panel)}
+.toc a:hover{border-color:var(--muted)}
+.toc a:focus-visible{outline:2px solid var(--orig);outline-offset:2px}
+.lab{display:grid;gap:14px;margin-top:6px}
+@media (min-width:900px){.lab{grid-template-columns:minmax(0,1.6fr) minmax(16rem,1fr);align-items:start}}
+.fig{margin:0;background:var(--panel);border:1px solid var(--rule);border-radius:10px;padding:10px;min-width:0}
+.board{width:100%;min-width:0}
+.board svg{display:block;max-width:100%;height:auto;user-select:none;-webkit-user-select:none;border-radius:6px;outline:none}
+.board svg.drag{touch-action:none}
+.board svg:focus-visible{box-shadow:0 0 0 2px var(--orig)}
+.board svg.dragging{cursor:grabbing}
+.controls{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;padding:10px 4px 2px}
+figcaption{font-size:13.5px;color:var(--muted);padding:8px 4px 2px;line-height:1.65}
+.btn{font:500 14px/1.2 var(--font-body);color:var(--fg);background:var(--panel);border:1px solid var(--rule);border-radius:999px;padding:8px 14px;cursor:pointer}
+.btn:hover{border-color:var(--muted)}
+.btn[aria-pressed="true"]{background:var(--fg);color:var(--panel);border-color:var(--fg)}
+.btn:focus-visible,input:focus-visible{outline:2px solid var(--orig);outline-offset:2px}
+.check{display:inline-flex;gap:8px;align-items:center;font-size:14px;cursor:pointer}
+.check input{accent-color:var(--orig);width:16px;height:16px}
+.range{display:inline-flex;gap:10px;align-items:center;font-size:14px;flex-wrap:wrap}
+.range input{accent-color:var(--orig);width:min(15rem,60vw)}
+.panel{background:var(--panel);border:1px solid var(--rule);border-radius:10px;padding:14px 16px;display:grid;gap:14px;min-width:0}
+.panel h3{font-size:12.5px;letter-spacing:.08em;color:var(--muted);font-weight:600}
+dl.vals{display:grid;grid-template-columns:minmax(0,auto) minmax(0,1fr);gap:7px 14px;margin:0;align-items:baseline}
+dl.vals dt{color:var(--muted);font-size:13.5px;line-height:1.4}
+dl.vals dt .m{color:var(--fg)}
+dl.vals dd{margin:0;font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-size:14px;text-align:right;overflow-wrap:anywhere}
+dd.hl{color:var(--key);font-weight:500}
+.chip{justify-self:start;font-size:12.5px;padding:3px 11px;border-radius:999px;background:var(--grid);color:var(--muted);line-height:1.6}
+.chip.ok{background:var(--ok-soft);color:var(--ok);font-weight:600}
+.steps{margin:0;padding-left:1.25em;display:grid;gap:4px;font-size:14.5px}
+.note{font-size:13.5px;color:var(--muted);margin:0}
+.tablebox{overflow-x:auto;min-width:0}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--rule);vertical-align:top}
+th{font-weight:600;color:var(--muted);font-size:13px}
+table.coef td,table.coef th{text-align:right;font-family:var(--font-mono);font-variant-numeric:tabular-nums;white-space:nowrap;padding:6px 8px}
+table.coef th:first-child,table.coef td:first-child{text-align:left;font-family:var(--font-body)}
+table.coef .ad{background:var(--img-soft)}
+table.cases tr.cur td{background:var(--orig-soft);font-weight:600}
+table.cases td:first-child{white-space:nowrap}
+.twin{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,1fr);gap:10px;align-items:start}
+.twin .cap{font-size:12.5px;color:var(--muted);margin:0 2px 6px;letter-spacing:.04em;font-weight:600}
+.chart svg{display:block;max-width:100%;height:auto}
+.callout{border-left:3px solid var(--key);padding:4px 0 4px 14px;max-width:44rem}
+.callout p{margin:0}
+footer{margin-top:72px;padding-top:16px;border-top:1px solid var(--rule);font-size:13px;color:var(--muted)}
+/* SVG 스타일 */
+.g-grid{stroke:var(--grid);stroke-width:1}
+.g-axis{stroke:var(--rule);stroke-width:1.3}
+.g-inv{stroke:var(--muted);stroke-width:1.5;stroke-dasharray:6 5;fill:none}
+.g-orig{stroke:var(--orig);stroke-width:2.3;fill:none}
+.g-img{stroke:var(--img);stroke-width:2.3;fill:none}
+.g-key{stroke:var(--key);stroke-width:2.5;fill:none}
+.g-fg{stroke:var(--fg);stroke-width:1.7;fill:none}
+.g-thin{stroke:var(--fg);stroke-width:1.1;fill:none;opacity:.75}
+.g-faint{stroke:var(--muted);stroke-width:1;fill:none;opacity:.5}
+.g-dash{stroke-dasharray:6 5}
+.g-thick{stroke-width:3.4}
+.g-soft{opacity:.55}
+.f-orig{fill:var(--orig-soft);stroke:none}
+.f-img{fill:var(--img-soft);stroke:none}
+.pt-orig{fill:var(--orig)}.pt-img{fill:var(--img)}.pt-key{fill:var(--key)}.pt-fg{fill:var(--fg)}
+.pt-hollow{fill:var(--panel);stroke:var(--fg);stroke-width:1.6}
+.pt-ring{fill:none;stroke:var(--key);stroke-width:2.2}
+.handle{fill:var(--panel);stroke-width:2.8}
+.h-orig{stroke:var(--orig)}.h-img{stroke:var(--img)}.h-key{stroke:var(--key)}.h-fg{stroke:var(--fg)}
+.focus-ring{fill:none;stroke:var(--orig);stroke-width:1.6;stroke-dasharray:3 3}
+.lbl{font-family:var(--font-math);font-style:italic;font-size:17px;fill:var(--fg)}
+.lbl.orig{fill:var(--orig)}.lbl.img{fill:var(--img)}.lbl.key{fill:var(--key)}
+.tick{font-family:var(--font-mono);font-size:10.5px;fill:var(--muted)}
+.note-s{font-family:var(--font-body);font-size:12.5px;fill:var(--muted)}
+.note-s.key{fill:var(--key)}.note-s.img{fill:var(--img)}.note-s.orig{fill:var(--orig)}
+@media (prefers-reduced-motion: reduce){*{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+
+
+<div class="wrap">
+<header class="hero">
+  <a class="back" href="../">← 수학 개념 연계 노트</a>
+  <p class="kicker">공통수학2 도형의 방정식 · 교과외 심화</p>
+  <h1>반전 기하 실험실</h1>
+  <p class="lead">원에 대한 반전을 직접 끌어 보며 확인하는 노트입니다. 그림 속 테두리만 있는 점은 마우스나 손가락으로 움직일 수 있고, 오른쪽 수치가 바로 따라 바뀝니다. 모든 그림의 반전원은 <span class="m"><i>x</i>²+<i>y</i>²=4</span>, 즉 <span class="m"><i>r</i> = 2</span>입니다.</p>
+  <ul class="legend" aria-label="그림 범례">
+    <li><span class="sw orig"></span>원래 도형</li>
+    <li><span class="sw img"></span>반전된 도형</li>
+    <li><span class="sw key"></span>핵심 값·보조점</li>
+    <li><span class="sw dash"></span>반전원</li>
+    <li><span class="ring"></span>끌 수 있는 점</li>
+  </ul>
+  <nav class="toc" aria-label="목차">
+    <a href="#def">정의</a><a href="#dist">① 거리 공식</a><a href="#swap">② 직선 ↔ 원</a><a href="#tangent">③ 접함 보존</a><a href="#ortho">④ 직교하는 원</a><a href="#locus">A 자취</a><a href="#weighted">B 가중 거리</a><a href="#pappus">C 파푸스 체인</a><a href="#ptolemy">톨레미 부등식</a><a href="#summary">정리</a>
+  </nav>
+</header>
+
+<main>
+
+<section id="def" aria-labelledby="h-def">
+  <p class="kicker">정의</p>
+  <h2 id="h-def">점 하나를 반직선 위로 보낸다</h2>
+  <div class="prose">
+    <p>중심 O, 반지름 <span class="m"><i>r</i></span>인 원에 대해 O가 아닌 점 P를 반직선 OP 위의 점 P′으로 보내되, 두 거리의 곱이 반지름의 제곱이 되게 합니다.</p>
+  </div>
+  <div class="defn">
+    <span class="big"><i>OP</i> × <i>OP</i>′ = <i>r</i>²</span>
+    <span class="sub">좌표식 <span class="m"><i>P</i>′ = <i>r</i>²/(<i>x</i>²+<i>y</i>²) · (<i>x</i>, <i>y</i>)</span> · 복소수식 <span class="m"><i>z</i> → <i>r</i>²/<i>z̄</i></span></span>
+  </div>
+  <div class="lab">
+    <figure class="fig">
+      <div class="board" id="b0"></div>
+      <div class="controls">
+        <label class="check"><input type="checkbox" id="c0-con">작도 보기</label>
+      </div>
+      <figcaption>P를 끌어 보세요. P′은 항상 반직선 OP 위에 있고 두 거리의 곱은 4로 고정됩니다. 작도를 켜면 직각삼각형에서 <span class="m"><i>OT</i>² = <i>OP</i> × <i>OP</i>′</span>이 성립하는 모습이 보입니다(중학교 직각삼각형의 닮음).</figcaption>
+    </figure>
+    <div class="panel" aria-live="polite">
+      <h3>실시간 값</h3>
+      <dl class="vals">
+        <dt><span class="m"><i>P</i></span> 좌표</dt><dd id="r0-p"></dd>
+        <dt><span class="m"><i>P</i>′</span> 좌표</dt><dd id="r0-pp"></dd>
+        <dt><span class="m"><i>OP</i></span></dt><dd id="r0-op"></dd>
+        <dt><span class="m"><i>OP</i>′</span></dt><dd id="r0-opp"></dd>
+        <dt><span class="m"><i>OP</i> × <i>OP</i>′</span></dt><dd class="hl" id="r0-prod"></dd>
+      </dl>
+      <span class="chip" id="r0-where"></span>
+      <ul class="steps">
+        <li>원 안의 점은 원 밖으로, 원 밖의 점은 원 안으로 갑니다.</li>
+        <li>원 위의 점은 그대로입니다.</li>
+        <li>두 번 하면 제자리입니다. 반전의 역변환은 반전 자신입니다.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="dist" aria-labelledby="h-dist">
+  <p class="kicker">성질 ①</p>
+  <h2 id="h-dist">거리 공식과 아폴로니오스 원</h2>
+  <div class="prose">
+    <p>두 점 A, P와 반전점 A′, P′에 대해 <span class="m"><i>OA</i> × <i>OA</i>′ = <i>OP</i> × <i>OP</i>′ = <i>r</i>²</span>이므로 <span class="m"><i>OA</i> : <i>OP</i>′ = <i>OP</i> : <i>OA</i>′</span>입니다. 두 삼각형은 ∠O를 공유하므로 <span class="m">△<i>OAP</i> ∽ △<i>OP</i>′<i>A</i>′</span> (SAS 닮음)이고, 여기서 거리 공식이 나옵니다.</p>
+    <p class="m" style="white-space:normal"><i>P</i>′<i>A</i>′ = <i>PA</i> × <i>r</i>² ÷ (<i>OA</i> × <i>OP</i>)</p>
+    <p>P를 반전원 위에 두면 <span class="m"><i>P</i>′ = <i>P</i></span>이므로 <span class="m"><i>PA</i>′ ÷ <i>PA</i> = <i>r</i> ÷ <i>OA</i></span>로 일정합니다. 반전원은 A, A′에 대한 아폴로니오스 원입니다.</p>
+  </div>
+  <div class="lab">
+    <figure class="fig">
+      <div class="board" id="b1"></div>
+      <div class="controls">
+        <button class="btn" type="button" id="c1-circ" aria-pressed="false">P를 반전원 위에 두기</button>
+      </div>
+      <figcaption id="cap1">A와 P를 끌어 보세요. 파란 삼각형 OAP와 빨간 삼각형 OP′A′은 모양이 같고 크기만 다릅니다.</figcaption>
+    </figure>
+    <div class="panel" aria-live="polite">
+      <h3>닮음 확인</h3>
+      <dl class="vals" id="g1-free">
+        <dt><span class="m"><i>OA</i> ÷ <i>OP</i>′</span></dt><dd id="r1-q1"></dd>
+        <dt><span class="m"><i>OP</i> ÷ <i>OA</i>′</span></dt><dd id="r1-q2"></dd>
+        <dt><span class="m"><i>P</i>′<i>A</i>′</span> (잰 값)</dt><dd class="hl" id="r1-meas"></dd>
+        <dt><span class="m"><i>PA</i> × <i>r</i>² ÷ (<i>OA</i> × <i>OP</i>)</span></dt><dd class="hl" id="r1-form"></dd>
+      </dl>
+      <dl class="vals" id="g1-circ" hidden>
+        <dt><span class="m"><i>PA</i>′ ÷ <i>PA</i></span></dt><dd class="hl" id="r1-ratio"></dd>
+        <dt><span class="m"><i>r</i> ÷ <i>OA</i></span></dt><dd class="hl" id="r1-rOA"></dd>
+        <dt><span class="m"><i>A</i>′</span> 좌표</dt><dd id="r1-ap"></dd>
+      </dl>
+      <p class="note" id="n1">두 비가 항상 같습니다. 이것이 SAS 닮음의 조건입니다.</p>
+    </div>
+  </div>
+</section>
+
+<section id="swap" aria-labelledby="h-swap">
+  <p class="kicker">성질 ②</p>
+  <h2 id="h-swap">직선과 원이 서로 바뀐다</h2>
+  <div class="prose">
+    <p>원래 도형 <span class="m"><i>a</i>(<i>x</i>²+<i>y</i>²) + <i>bx</i> + <i>cy</i> + <i>d</i> = 0</span>에 <span class="m"><i>x</i> = <i>r</i>²<i>X</i>/(<i>X</i>²+<i>Y</i>²)</span>, <span class="m"><i>y</i> = <i>r</i>²<i>Y</i>/(<i>X</i>²+<i>Y</i>²)</span>를 대입하면 다음이 됩니다. 도형의 이동에서 쓴 "역변환을 대입" 원리 그대로입니다.</p>
+    <p class="m" style="white-space:normal"><i>d</i>(<i>X</i>²+<i>Y</i>²) + <i>r</i>²<i>bX</i> + <i>r</i>²<i>cY</i> + <i>r</i>⁴<i>a</i> = 0</p>
+    <p><strong>a와 d의 자리가 바뀌는 것이 전부입니다.</strong> <span class="m"><i>a</i> = 0</span>이면 직선이고, <span class="m"><i>d</i> = 0</span>이면 원점을 지납니다. 아래에서 네 경우를 바꿔 가며 계수 표의 빨간 두 열이 서로 자리를 바꾸는 것을 확인해 보세요.</p>
+  </div>
+  <div class="lab">
+    <figure class="fig">
+      <div class="controls" role="group" aria-label="원래 도형 고르기" id="c2-modes"></div>
+      <div class="board" id="b2"></div>
+      <figcaption id="cap2">옅은 선은 O에서 나가는 반직선입니다. 같은 반직선 위의 파란 점과 빨간 점이 서로 짝입니다.</figcaption>
+    </figure>
+    <div class="panel" aria-live="polite">
+      <h3>계수 표</h3>
+      <div class="tablebox">
+        <table class="coef">
+          <thead><tr><th></th><th class="ad">a</th><th>b</th><th>c</th><th class="ad">d</th></tr></thead>
+          <tbody>
+            <tr><td>원래</td><td class="ad" id="k-a"></td><td id="k-b"></td><td id="k-c"></td><td class="ad" id="k-d"></td></tr>
+            <tr><td>반전 후</td><td class="ad" id="k-a2"></td><td id="k-b2"></td><td id="k-c2"></td><td class="ad" id="k-d2"></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="note">반전 후 a는 원래의 d, 반전 후 d는 원래 a의 16배(<span class="m"><i>r</i>⁴ = 16</span>)입니다.</p>
+      <h3>네 가지 경우</h3>
+      <div class="tablebox">
+        <table class="cases">
+          <thead><tr><th>원래 도형</th><th>반전 후</th></tr></thead>
+          <tbody>
+            <tr data-mode="lineO"><td>O를 지나는 직선</td><td>같은 직선</td></tr>
+            <tr data-mode="line"><td>O를 지나지 않는 직선</td><td>O를 지나는 원</td></tr>
+            <tr data-mode="circO"><td>O를 지나는 원</td><td>O를 지나지 않는 직선</td></tr>
+            <tr data-mode="circ"><td>O를 지나지 않는 원</td><td>O를 지나지 않는 원</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="note" id="n2"></p>
+    </div>
+  </div>
+  <div class="callout"><p><strong>주의.</strong> 원의 중심은 반전된 원의 중심으로 가지 않습니다. 중심 C, 반지름 ρ인 원(<span class="m"><i>OC</i> = <i>d</i></span>)의 상은 중심 <span class="m"><i>r</i>²<i>C</i> ÷ (<i>d</i>² − ρ²)</span>, 반지름 <span class="m"><i>r</i>²ρ ÷ |<i>d</i>² − ρ²|</span>인 원입니다. "O를 지나지 않는 원"을 골라 ×(중심의 반전점)와 ●(반전된 원의 중심)가 어긋나는 것을 보세요.</p></div>
+</section>
+
+<section id="tangent" aria-labelledby="h-tangent">
+  <p class="kicker">성질 ③</p>
+  <h2 id="h-tangent">접하는 도형은 반전 후에도 접한다</h2>
+  <div class="prose">
+    <p>반전은 일대일대응이므로 교점이 하나이면 반전 후에도 교점이 하나입니다. 더 강하게는 두 곡선이 만나는 각이 그대로 보존되고 방향만 뒤집힙니다(등각사상). 성질 ①의 닮음에서 <span class="m">∠<i>OAP</i> = ∠<i>OP</i>′<i>A</i>′</span>인 것이 이 성질의 핵심입니다.</p>
+  </div>
+  <div class="lab">
+    <figure class="fig">
+      <div class="board" id="b3"></div>
+      <figcaption>접점 T를 원 위에서 끌어 보세요. 접선은 O를 지나는 원이 되지만, 여전히 반전된 원과 T′ 한 점에서만 만납니다.</figcaption>
+    </figure>
+    <div class="panel" aria-live="polite">
+      <h3>접함 확인</h3>
+      <dl class="vals">
+        <dt>접점 <span class="m"><i>T</i></span></dt><dd id="r3-t"></dd>
+        <dt>반전 후 접점 <span class="m"><i>T</i>′</span></dt><dd id="r3-tp"></dd>
+        <dt>반전된 두 원의 중심 거리</dt><dd class="hl" id="r3-d"></dd>
+        <dt id="r3-kind">반지름의 합</dt><dd class="hl" id="r3-s"></dd>
+      </dl>
+      <p class="note">중심 거리가 반지름의 합(외접) 또는 차(내접)와 같으면 두 원은 접합니다.</p>
+    </div>
+  </div>
+</section>
+
+<section id="ortho" aria-labelledby="h-ortho">
+  <p class="kicker">성질 ④</p>
+  <h2 id="h-ortho">반전원과 직교하는 원은 제자리에 있다</h2>
+  <div class="prose">
+    <p>O에서 원 ω에 그은 접선의 길이가 <span class="m"><i>r</i></span>이면, 즉 O의 방멱이 <span class="m"><i>r</i>²</span>이면 ω는 반전원과 직교합니다. 이때 O를 지나는 직선이 ω와 만나는 두 점 Q, Q′은 할선 정리에 의해 <span class="m"><i>OQ</i> × <i>OQ</i>′ = <i>r</i>²</span>을 만족하므로 서로의 반전점이고, ω는 통째로 자기 자신으로 갑니다.</p>
+  </div>
+  <div class="lab">
+    <figure class="fig">
+      <div class="board" id="b4"></div>
+      <div class="controls">
+        <label class="range" for="s4">원 ω의 반지름 ρ <input type="range" id="s4" min="0.6" max="2.9" step="0.01" value="1.6"><span class="m" id="s4v"></span></label>
+        <button class="btn" type="button" id="c4-snap">직교하게 맞추기</button>
+      </div>
+      <figcaption>중심 C(3, 0)는 고정입니다. 반지름을 바꿔 두 원이 만나는 각이 90°가 되는 순간을 찾아보세요. 그때 빨간 원이 파란 원과 정확히 겹칩니다.</figcaption>
+    </figure>
+    <div class="panel" aria-live="polite">
+      <h3>직교 확인</h3>
+      <span class="chip" id="r4-chip"></span>
+      <dl class="vals">
+        <dt>O의 방멱 <span class="m"><i>OC</i>² − ρ²</span></dt><dd class="hl" id="r4-pow"></dd>
+        <dt><span class="m"><i>r</i>²</span></dt><dd>4.00</dd>
+        <dt>두 원이 만나는 각 <span class="m">∠<i>OTC</i></span></dt><dd id="r4-ang"></dd>
+        <dt>반전된 원의 중심</dt><dd id="r4-c"></dd>
+        <dt>반전된 원의 반지름</dt><dd id="r4-r"></dd>
+      </dl>
+    </div>
+  </div>
+</section>
+
+<section id="locus" aria-labelledby="h-locus">
+  <p class="kicker">적용 A · 공통수학2 자취 문제</p>
+  <h2 id="h-locus"><span class="m"><i>OP</i> × <i>OQ</i></span>가 일정하면 반전이다</h2>
+  <div class="prose">
+    <p><strong>문제.</strong> 점 P가 직선 <span class="m"><i>x</i> = 2</span> 위를 움직이고, 반직선 OP 위의 점 Q가 <span class="m"><i>OP</i> × <i>OQ</i> = 4</span>를 만족할 때 Q의 자취를 구하시오.</p>
+    <ol>
+      <li>Q(<span class="m"><i>x</i>, <i>y</i></span>)로 두고 P를 Q로 나타냅니다. <span class="m"><i>P</i> = 4/(<i>x</i>²+<i>y</i>²) · (<i>x</i>, <i>y</i>)</span></li>
+      <li>P의 <span class="m"><i>x</i></span>좌표가 2라는 조건에 대입합니다. <span class="m">4<i>x</i>/(<i>x</i>²+<i>y</i>²) = 2</span></li>
+      <li>정리하면 <span class="m">(<i>x</i>−1)² + <i>y</i>² = 1</span> (원점 제외)입니다.</li>
+    </ol>
+    <p>이 교과 풀이가 반전 그 자체입니다. 성질 ②의 표로 보면 "O를 지나지 않는 직선 → O를 지나는 원"을 계산 전에 예상할 수 있습니다.</p>
+  </div>
+  <div class="lab">
+    <figure class="fig">
+      <div class="board" id="b5"></div>
+      <div class="controls">
+        <button class="btn" type="button" id="c5-play">자취 그리기</button>
+        <label class="range" for="s5">P의 <span class="m"><i>y</i></span>좌표 <input type="range" id="s5" min="-3" max="3" step="0.01" value="1.2"></label>
+        <label class="check"><input type="checkbox" id="c5-full">끝없이 이으면</label>
+      </div>
+      <figcaption>P를 직선 위에서 끌거나 슬라이더를 움직이면 Q가 지나간 자리가 점으로 남습니다. "끝없이 이으면"을 켜면 P가 위아래로 무한히 멀어질 때 Q가 원점에 한없이 가까워지지만 닿지는 않는 모습이 보입니다.</figcaption>
+    </figure>
+    <div class="panel" aria-live="polite">
+      <h3>실시간 값</h3>
+      <dl class="vals">
+        <dt><span class="m"><i>P</i></span></dt><dd id="r5-p"></dd>
+        <dt><span class="m"><i>Q</i></span></dt><dd id="r5-q"></dd>
+        <dt><span class="m"><i>OP</i> × <i>OQ</i></span></dt><dd class="hl" id="r5-prod"></dd>
+        <dt><span class="m"><i>x</i>² + <i>y</i>² − 2<i>x</i></span> (Q에서)</dt><dd class="hl" id="r5-eq"></dd>
+      </dl>
+      <p class="note">마지막 값이 항상 0이므로 Q는 원 <span class="m">(<i>x</i>−1)² + <i>y</i>² = 1</span> 위에 있습니다.</p>
+    </div>
+  </div>
+</section>
+
+<section id="weighted" aria-labelledby="h-weighted">
+  <p class="kicker">적용 B · 가중 거리</p>
+  <h2 id="h-weighted">원 위의 점 P와 <span class="m"><i>k</i> · <i>PA</i> + <i>PB</i></span></h2>
+  <div class="prose">
+    <p>반전원의 중심이 O, 반지름이 <span class="m"><i>r</i></span>, <span class="m"><i>OA</i> = <i>a</i></span>일 때 반직선 OA 위에 <span class="m"><i>OA</i>′ = <i>r</i>² ÷ <i>a</i></span>인 점 A′을 잡으면, 원 위의 모든 P에서 <span class="m"><i>PA</i>′ = (<i>r</i> ÷ <i>a</i>) × <i>PA</i></span>입니다(성질 ①). 따라서 <span class="m"><i>k</i> = <i>r</i> ÷ <i>a</i></span>이면</p>
+    <p class="m" style="white-space:normal"><i>k</i> · <i>PA</i> + <i>PB</i> = <i>PA</i>′ + <i>PB</i> ≥ <i>A</i>′<i>B</i></p>
+    <p>이고, 선분 A′B가 원과 만나면 등호가 성립합니다. 서술형에서는 "반전"이라는 말 없이 <span class="m">△<i>OAP</i> ∽ △<i>OPA</i>′</span> (SAS 닮음)만 쓰면 완전한 풀이가 됩니다.</p>
+  </div>
+  <div class="lab">
+    <figure class="fig">
+      <div class="controls" role="group" aria-label="예제 고르기">
+        <button class="btn" type="button" id="c6-p0" aria-pressed="true">예제 1 · A가 원 안</button>
+        <button class="btn" type="button" id="c6-p1" aria-pressed="false">예제 2 · A가 원 밖</button>
+      </div>
+      <div class="board" id="b6"></div>
+      <div class="controls">
+        <button class="btn" type="button" id="c6-min">최솟값 위치로</button>
+      </div>
+      <figcaption id="cap6"></figcaption>
+    </figure>
+    <div class="panel" aria-live="polite">
+      <h3 id="h6-expr">실시간 값</h3>
+      <dl class="vals">
+        <dt id="r6-kl"></dt><dd class="hl" id="r6-k"></dd>
+        <dt><span class="m"><i>PA</i>′</span></dt><dd class="hl" id="r6-ap"></dd>
+        <dt><span class="m"><i>PB</i></span></dt><dd id="r6-b"></dd>
+        <dt id="r6-sl">합</dt><dd id="r6-sum"></dd>
+        <dt>최솟값 <span class="m"><i>A</i>′<i>B</i></span></dt><dd class="hl" id="r6-min"></dd>
+      </dl>
+      <div class="chart" id="ch6" aria-label="P의 위치에 따른 합의 변화 그래프"></div>
+      <p class="note">가로축은 P의 방향각(°), 세로축은 합입니다. 점선이 최솟값이고, 그래프가 점선에 닿는 곳이 선분 A′B와 원의 교점입니다.</p>
+    </div>
+  </div>
+</section>
+
+<section id="pappus" aria-labelledby="h-pappus">
+  <p class="kicker">적용 C · 접하는 원</p>
+  <h2 id="h-pappus">반전 중심을 접점에 두면 원이 직선이 된다</h2>
+  <div class="prose">
+    <p><strong>문제.</strong> 두 원 <span class="m"><i>C</i>₁: <i>x</i>²+<i>y</i>²=2<i>x</i></span>, <span class="m"><i>C</i>₂: <i>x</i>²+<i>y</i>²=4<i>x</i></span>는 원점에서 접하고 C₁이 C₂ 안에 있다. 그 사이에 두 원 모두에 접하는 원 <span class="m">(<i>x</i>−3)²+<i>y</i>²=1</span>이 있다. 이 원의 바로 위에서 C₁, C₂와 이 원에 모두 접하는 원의 반지름을 구하시오.</p>
+    <ol>
+      <li><span class="m"><i>x</i>²+<i>y</i>²=4</span>에 대해 반전하면 C₁은 직선 <span class="m"><i>x</i>=2</span>, C₂는 직선 <span class="m"><i>x</i>=1</span>이 됩니다(성질 ②). 두 원 사이 영역은 띠 <span class="m">1 < <i>x</i> < 2</span>가 됩니다.</li>
+      <li>두 원에 접하는 원은 두 직선에 접하는 원, 즉 반지름 1/2이고 중심이 <span class="m">(3/2, <i>n</i>)</span>인 "동전"이 됩니다(성질 ③).</li>
+      <li>동전을 다시 반전하면 반지름은 <span class="m">2 ÷ (<i>n</i>² + 2)</span>입니다. 바로 위 원은 <span class="m"><i>n</i> = 1</span>이므로 <strong>2/3</strong>입니다.</li>
+    </ol>
+    <p><strong>파푸스의 정리.</strong> <span class="m"><i>n</i></span>번째 원은 중심의 높이가 반지름의 <span class="m">2<i>n</i></span>배입니다. 띠 안의 동전에서는 당연한 사실이고, 반전은 원점을 지나는 직선(여기서는 <span class="m"><i>x</i></span>축)을 보존하므로 이 비율이 유지됩니다.</p>
+  </div>
+  <div class="lab">
+    <figure class="fig">
+      <div class="twin">
+        <div><p class="cap">원래 그림</p><div class="board" id="b7a"></div></div>
+        <div><p class="cap">반전 후</p><div class="board" id="b7b"></div></div>
+      </div>
+      <div class="controls">
+        <label class="range" for="s7">원 번호 <span class="m"><i>n</i></span> <input type="range" id="s7" min="-3" max="3" step="1" value="1"><span class="m" id="s7v"></span></label>
+      </div>
+      <figcaption>어느 쪽 그림이든 원을 누르면 반대쪽에서 짝이 되는 원이 호박색으로 강조됩니다. 왼쪽의 복잡한 원들이 오른쪽에서는 띠 안에 쌓인 같은 크기의 동전입니다.</figcaption>
+    </figure>
+    <div class="panel" aria-live="polite">
+      <h3>선택한 원</h3>
+      <dl class="vals">
+        <dt>반전 후 중심</dt><dd id="r7-c2"></dd>
+        <dt>반전 후 반지름</dt><dd>0.500</dd>
+        <dt>원래 중심</dt><dd id="r7-c"></dd>
+        <dt>원래 반지름 <span class="m">2 ÷ (<i>n</i>²+2)</span></dt><dd class="hl" id="r7-r"></dd>
+        <dt>높이 ÷ (2 × 반지름)</dt><dd class="hl" id="r7-h"></dd>
+      </dl>
+      <p class="note">좌표로만 풀면 접할 조건 세 개로 연립방정식을 세워야 합니다. 반전하면 그림이 동전 쌓기로 바뀌어 계산이 거의 사라집니다.</p>
+    </div>
+  </div>
+</section>
+
+<section id="ptolemy" aria-labelledby="h-ptolemy">
+  <p class="kicker">대학·경시로 이어지는 길</p>
+  <h2 id="h-ptolemy">톨레미 부등식을 반전 한 번으로</h2>
+  <div class="prose">
+    <p>임의의 네 점 A, B, C, D에 대해 <span class="m"><i>AB</i>·<i>CD</i> + <i>AD</i>·<i>BC</i> ≥ <i>AC</i>·<i>BD</i></span>이고, 등호는 네 점이 이 순서로 한 원 위에 있을 때 성립합니다.</p>
+    <ol>
+      <li>A를 중심으로 반전하면 거리 공식으로 <span class="m"><i>B</i>′<i>C</i>′ = <i>BC</i>·<i>k</i>/(<i>AB</i>·<i>AC</i>)</span> 등이 됩니다(<span class="m"><i>k</i></span>는 반지름의 제곱).</li>
+      <li>삼각형 부등식 <span class="m"><i>B</i>′<i>C</i>′ + <i>C</i>′<i>D</i>′ ≥ <i>B</i>′<i>D</i>′</span>에 대입하고 <span class="m"><i>AB</i>·<i>AC</i>·<i>AD</i></span>를 곱하면 끝입니다.</li>
+      <li>등호는 B′, C′, D′이 한 직선 위에 있을 때이고, 성질 ②에 의해 이는 B, C, D가 A를 지나는 원 위에 있을 때입니다.</li>
+    </ol>
+  </div>
+  <div class="lab">
+    <figure class="fig">
+      <div class="board" id="b8"></div>
+      <div class="controls">
+        <button class="btn" type="button" id="c8-snap">D를 원 위로 붙이기</button>
+        <label class="check"><input type="checkbox" id="c8-inv" checked>A 중심 반전 보기</label>
+      </div>
+      <figcaption>네 점을 끌어 보세요. 점선 원은 A, B, C를 지나는 원이고, 빨간 삼각형은 A를 중심으로 반지름 2인 반전을 한 B′C′D′입니다. D가 점선 원 위(C와 A 사이의 호)에 오면 빨간 삼각형이 한 직선으로 납작해집니다.</figcaption>
+    </figure>
+    <div class="panel" aria-live="polite">
+      <h3>부등식 확인</h3>
+      <span class="chip" id="r8-chip"></span>
+      <dl class="vals">
+        <dt><span class="m"><i>AB</i>·<i>CD</i> + <i>AD</i>·<i>BC</i></span></dt><dd class="hl" id="r8-l"></dd>
+        <dt><span class="m"><i>AC</i>·<i>BD</i></span></dt><dd class="hl" id="r8-r"></dd>
+        <dt>차이</dt><dd id="r8-d"></dd>
+        <dt><span class="m"><i>B</i>′<i>C</i>′ + <i>C</i>′<i>D</i>′</span></dt><dd id="r8-il"></dd>
+        <dt><span class="m"><i>B</i>′<i>D</i>′</span></dt><dd id="r8-ir"></dd>
+      </dl>
+    </div>
+  </div>
+  <div class="prose">
+    <h3>뫼비우스 변환과 리만 구</h3>
+    <p>복소수로 반전은 <span class="m"><i>z</i> → <i>r</i>²/<i>z̄</i></span>이고, 반전 두 번이나 반전과 대칭을 합성하면 <span class="m"><i>z</i> → (<i>az</i>+<i>b</i>)/(<i>cz</i>+<i>d</i>)</span> 꼴의 뫼비우스 변환이 나옵니다. 평면에 무한원점을 하나 더하면(리만 구) 직선은 "무한원점을 지나는 원"이 됩니다. 그러면 성질 ②는 "원은 원으로 간다"는 한 문장이 되고, 직선과 원이 서로 바뀌는 이유가 설명됩니다. 복소해석학의 등각사상 이론은 성질 ③의 연장선입니다.</p>
+  </div>
+</section>
+
+<section id="summary" aria-labelledby="h-summary">
+  <p class="kicker">정리</p>
+  <h2 id="h-summary">프로젝트에서 어디까지 쓸 수 있나</h2>
+  <div class="tablebox">
+    <table>
+      <thead><tr><th>용법</th><th>고교에서의 모습</th><th>서술형 사용</th></tr></thead>
+      <tbody>
+        <tr><td>자취 (<span class="m"><i>OP</i> × <i>OQ</i></span> = 일정)</td><td>Q를 두고 P를 Q로 표현해 대입</td><td>가능 (그 자체가 교과 풀이)</td></tr>
+        <tr><td>가중 거리 <span class="m"><i>k</i>·<i>PA</i> + <i>PB</i></span></td><td>보조점 A′과 SAS 닮음</td><td>가능 (닮음으로 서술)</td></tr>
+        <tr><td>접하는 원</td><td>교과 풀이로는 연립방정식</td><td>반전은 교과외, 답 검증·출제 설계용</td></tr>
+        <tr><td>톨레미·뫼비우스</td><td>없음</td><td>경시·대학용</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="prose">
+    <p>반전은 교과 밖 개념이지만, 공통수학2에서 실제로 쓰이는 부분(자취, 가중 거리)은 중학교 닮음과 역변환 대입만으로 서술할 수 있습니다. "교과 풀이로 번역 가능한 대학 아이디어"의 좋은 사례입니다.</p>
+  </div>
+</section>
+
+</main>
+<footer>모든 수치는 브라우저에서 실시간으로 계산합니다. 키보드로는 그림을 선택한 뒤 방향키로 점을 옮기고(Shift를 누르면 크게), 스페이스로 움직일 점을 바꿉니다.</footer>
+</div>
+
+<script>
+(()=>{
+"use strict";
+const NS="http://www.w3.org/2000/svg";
+const $=id=>document.getElementById(id);
+const R=2,R2=4;
+const reduceMotion=!!(window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches);
+const P=(x,y)=>({x,y});
+const O=P(0,0);
+const add=(a,b)=>P(a.x+b.x,a.y+b.y),sub=(a,b)=>P(a.x-b.x,a.y-b.y),mul=(a,k)=>P(a.x*k,a.y*k);
+const dot=(a,b)=>a.x*b.x+a.y*b.y,len=a=>Math.hypot(a.x,a.y),dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
+const unit=a=>{const l=len(a)||1;return P(a.x/l,a.y/l)},perp=a=>P(-a.y,a.x);
+const inv=(p,r2=R2,c=O)=>{const v=sub(p,c),d=dot(v,v)||1e-12;return add(c,mul(v,r2/d))};
+const away=(p,c,m)=>{const v=sub(p,c);const l=len(v);if(l>=m)return p;return add(c,l<1e-9?P(m,0):mul(v,m/l))};
+const clampN=(v,a,b)=>Math.min(b,Math.max(a,v));
+function fmt(v,d=2){if(!isFinite(v))return"∞";const t=Math.pow(10,-d)/2;if(Math.abs(v)<t)v=0;return v.toFixed(d).replace("-","−")}
+const fpt=(p,d=2)=>`(${fmt(p.x,d)}, ${fmt(p.y,d)})`;
+function invCircle(c,rho,r2=R2){const k=dot(c,c)-rho*rho;if(Math.abs(k)<1e-7){return{type:"line",n:unit(c),h:r2/(2*rho)}}return{type:"circle",c:mul(c,r2/k),r:r2*rho/Math.abs(k)}}
+function invLine(n,h,r2=R2){if(Math.abs(h)<1e-7)return{type:"line",n,h:0};return{type:"circle",c:mul(n,r2/(2*h)),r:Math.abs(r2/(2*h))}}
+
+class Board{
+  constructor(host,opt){
+    this.host=host;this.o=Object.assign({maxH:470,label:"",interactive:true},opt);
+    const sv=document.createElementNS(NS,"svg");this.svg=sv;
+    sv.setAttribute("role","img");sv.setAttribute("aria-label",this.o.label);
+    if(this.o.interactive){sv.setAttribute("tabindex","0");sv.classList.add("drag")}
+    host.appendChild(sv);
+    this.handles=[];this.active=0;this.drag=null;this.focused=false;this.off=P(0,0);
+    this.render=()=>"";this.after=()=>{};this.onclick=null;
+    this.bind();
+    if(window.ResizeObserver){new ResizeObserver(()=>this.resize()).observe(host)}else{window.addEventListener("resize",()=>this.resize())}
+    this.resize();
+  }
+  resize(){
+    const w=Math.max(160,Math.floor(this.host.clientWidth||600));
+    if(w===this.W&&this.s)return;
+    const o=this.o,dx=o.xmax-o.xmin,dy=o.ymax-o.ymin;
+    let s=w/dx;if(dy*s>o.maxH)s=o.maxH/dy;
+    this.s=s;this.W=w;this.H=Math.round(dy*s);
+    const vw=w/s;this.x0=(o.xmin+o.xmax)/2-vw/2;this.x1=this.x0+vw;this.y0=o.ymin;this.y1=o.ymax;
+    this.svg.setAttribute("viewBox",`0 0 ${w} ${this.H}`);this.svg.setAttribute("width",w);this.svg.setAttribute("height",this.H);
+    this.draw();
+  }
+  X(x){return +((x-this.x0)*this.s).toFixed(2)}
+  Y(y){return +((this.y1-y)*this.s).toFixed(2)}
+  toMath(e){const r=this.svg.getBoundingClientRect();const px=(e.clientX-r.left)*(this.W/r.width),py=(e.clientY-r.top)*(this.H/r.height);return P(px/this.s+this.x0,this.y1-py/this.s)}
+  clamp(p){const m=10/this.s;return P(clampN(p.x,this.x0+m,this.x1-m),clampN(p.y,this.y0+m,this.y1-m))}
+  draw(){if(!this.s)return;this.svg.innerHTML=this.gridStr()+this.render(this)+this.handleStr();this.after(this)}
+  gridStr(){
+    let s="";const st=this.s<30?2:1;
+    for(let x=Math.ceil(this.x0/st)*st;x<=this.x1;x+=st)s+=`<line class="g-grid" x1="${this.X(x)}" y1="0" x2="${this.X(x)}" y2="${this.H}"/>`;
+    for(let y=Math.ceil(this.y0/st)*st;y<=this.y1;y+=st)s+=`<line class="g-grid" x1="0" y1="${this.Y(y)}" x2="${this.W}" y2="${this.Y(y)}"/>`;
+    const hasY=this.x0<0&&this.x1>0,hasX=this.y0<0&&this.y1>0;
+    if(hasY)s+=`<line class="g-axis" x1="${this.X(0)}" y1="0" x2="${this.X(0)}" y2="${this.H}"/>`;
+    if(hasX)s+=`<line class="g-axis" x1="0" y1="${this.Y(0)}" x2="${this.W}" y2="${this.Y(0)}"/>`;
+    const ls=this.s<44?2:1;
+    if(hasX)for(let x=Math.ceil(this.x0/ls)*ls;x<=this.x1-0.3;x+=ls){if(x===0)continue;s+=`<text class="tick" x="${this.X(x)}" y="${this.Y(0)+14}" text-anchor="middle">${String(x).replace("-","−")}</text>`}
+    if(hasY)for(let y=Math.ceil(this.y0/ls)*ls;y<=this.y1-0.3;y+=ls){if(y===0)continue;s+=`<text class="tick" x="${this.X(0)-6}" y="${this.Y(y)+4}" text-anchor="end">${String(y).replace("-","−")}</text>`}
+    return s;
+  }
+  seg(a,b,c){return `<line class="${c}" x1="${this.X(a.x)}" y1="${this.Y(a.y)}" x2="${this.X(b.x)}" y2="${this.Y(b.y)}"/>`}
+  circ(c,r,cl){return `<circle class="${cl}" cx="${this.X(c.x)}" cy="${this.Y(c.y)}" r="${Math.max(0,r*this.s).toFixed(2)}"/>`}
+  line(p,dir,cl){const d=unit(dir),L=300;return this.seg(add(p,mul(d,-L)),add(p,mul(d,L)),cl)}
+  ray(a,dir,cl){return this.seg(a,add(a,mul(unit(dir),300)),cl)}
+  geo(g,cl){return g.type==="circle"?this.circ(g.c,g.r,cl):this.line(mul(g.n,g.h),perp(g.n),cl)}
+  pt(p,cl,r=4.5){return `<circle class="${cl}" cx="${this.X(p.x)}" cy="${this.Y(p.y)}" r="${r}"/>`}
+  cross(p,cl){const x=this.X(p.x),y=this.Y(p.y),k=6;return `<line class="${cl}" x1="${x-k}" y1="${y-k}" x2="${x+k}" y2="${y+k}"/><line class="${cl}" x1="${x-k}" y1="${y+k}" x2="${x+k}" y2="${y-k}"/>`}
+  lbl(p,t,cl="lbl",dx=9,dy=-9,an="start"){return `<text class="${cl}" x="${(this.X(p.x)+dx).toFixed(1)}" y="${(this.Y(p.y)+dy).toFixed(1)}" text-anchor="${an}">${t}</text>`}
+  lblDir(p,t,cl,dir,dist=15){const u=unit(dir);const an=u.x>0.35?"start":u.x<-0.35?"end":"middle";return this.lbl(p,t,cl,u.x*dist,-u.y*dist+5,an)}
+  poly(pts,cl,closed=true){const d=pts.map(p=>`${this.X(p.x)},${this.Y(p.y)}`).join(" ");return closed?`<polygon class="${cl}" points="${d}"/>`:`<polyline class="${cl}" points="${d}"/>`}
+  right(v,a,b){const k=9/this.s;const q1=add(v,mul(unit(sub(a,v)),k)),q2=add(v,mul(unit(sub(b,v)),k)),q3=add(q1,sub(q2,v));return this.poly([q1,q3,q2],"g-thin",false)}
+  arc(v,a,b,rpx,cl){const a1=Math.atan2(a.y-v.y,a.x-v.x);let d=Math.atan2(b.y-v.y,b.x-v.x)-a1;while(d>Math.PI)d-=2*Math.PI;while(d<-Math.PI)d+=2*Math.PI;const r=rpx/this.s,pts=[];for(let i=0;i<=20;i++){const t=a1+d*i/20;pts.push(add(v,P(r*Math.cos(t),r*Math.sin(t))))}return this.poly(pts,cl,false)}
+  handleStr(){return this.handles.map((h,i)=>{const p=h.get(),x=this.X(p.x),y=this.Y(p.y);let s="";if(this.focused&&i===this.active)s+=`<circle class="focus-ring" cx="${x}" cy="${y}" r="14"/>`;return s+`<circle class="handle h-${h.cls||"orig"}" cx="${x}" cy="${y}" r="7.5"/>`}).join("")}
+  bind(){
+    const sv=this.svg;
+    sv.addEventListener("click",e=>{if(this.onclick)this.onclick(this.toMath(e))});
+    sv.addEventListener("pointerdown",e=>{
+      if(!this.handles.length)return;
+      const m=this.toMath(e);let bi=-1,bd=1e9;
+      this.handles.forEach((h,i)=>{const p=h.get();const d=Math.hypot(p.x-m.x,p.y-m.y)*this.s;if(d<bd){bd=d;bi=i}});
+      const tol=e.pointerType==="mouse"?18:30;if(bi<0||bd>tol)return;
+      this.off=sub(this.handles[bi].get(),m);this.drag=bi;this.active=bi;
+      try{sv.setPointerCapture(e.pointerId)}catch(_){}
+      sv.classList.add("dragging");e.preventDefault();
+    });
+    sv.addEventListener("pointermove",e=>{
+      if(this.drag===null){
+        if(this.handles.length&&e.pointerType==="mouse"){const m=this.toMath(e);const near=this.handles.some(h=>{const p=h.get();return Math.hypot(p.x-m.x,p.y-m.y)*this.s<18});sv.style.cursor=near?"grab":""}
+        return;
+      }
+      const m=add(this.toMath(e),this.off);this.handles[this.drag].set(this.clamp(m));this.draw();
+    });
+    const end=()=>{if(this.drag!==null){this.drag=null;sv.classList.remove("dragging")}};
+    sv.addEventListener("pointerup",end);sv.addEventListener("pointercancel",end);sv.addEventListener("lostpointercapture",end);
+    sv.addEventListener("focus",()=>{this.focused=true;this.draw()});
+    sv.addEventListener("blur",()=>{this.focused=false;this.draw()});
+    sv.addEventListener("keydown",e=>{
+      if(!this.handles.length)return;
+      const st=e.shiftKey?0.25:0.05;let d=null;
+      if(e.key==="ArrowLeft")d=P(-st,0);else if(e.key==="ArrowRight")d=P(st,0);else if(e.key==="ArrowUp")d=P(0,st);else if(e.key==="ArrowDown")d=P(0,-st);
+      if(d){const h=this.handles[this.active%this.handles.length];h.set(this.clamp(add(h.get(),d)));this.draw();e.preventDefault()}
+      else if(e.key===" "||e.key==="Enter"){this.active=(this.active+1)%this.handles.length;this.draw();e.preventDefault()}
+    });
+  }
+}
+
+/* ---------- 정의 ---------- */
+(()=>{
+  const b=new Board($("b0"),{xmin:-4.2,xmax:6.4,ymin:-3.3,ymax:3.3,maxH:460,label:"반전원 x²+y²=4와 점 P, 반전점 P′. P를 움직이면 P′이 반직선 OP 위에서 OP×OP′=4를 유지한다."});
+  let p=P(3.3,1.3),con=false;
+  b.handles=[{get:()=>p,set:m=>{p=away(m,O,0.3)},cls:"orig"}];
+  b.render=b=>{
+    const q=inv(p);let s=b.circ(O,R,"g-inv");
+    s+=b.ray(O,p,"g-faint");
+    if(con){
+      const inside=len(p)<=R,X=inside?p:q,Yo=inside?q:p;
+      const T=add(X,mul(unit(perp(X)),Math.sqrt(Math.max(0,R2-dot(X,X)))));
+      s+=b.seg(O,T,"g-thin")+b.seg(X,T,"g-thin g-dash")+b.seg(T,Yo,"g-key");
+      if(len(sub(T,X))>0.05){s+=b.right(X,O,T)+b.right(T,O,Yo)}
+      s+=b.pt(T,"pt-key",4)+b.lblDir(T,"T","lbl key",perp(X));
+    }
+    s+=b.pt(O,"pt-fg",3.5)+b.lbl(O,"O","lbl",-8,18,"end");
+    s+=b.pt(q,"pt-img",5.5)+b.lblDir(q,"P′","lbl img",add(unit(q),mul(unit(perp(q)),-0.9)));
+    s+=b.lblDir(p,"P","lbl orig",add(unit(p),mul(unit(perp(p)),0.9)));
+    const rl=P(R*Math.cos(2.35),R*Math.sin(2.35));s+=b.lbl(rl,"x²+y²=4","note-s",-6,-6,"end");
+    return s;
+  };
+  b.after=()=>{const q=inv(p);$("r0-p").textContent=fpt(p);$("r0-pp").textContent=fpt(q);$("r0-op").textContent=fmt(len(p),3);$("r0-opp").textContent=fmt(len(q),3);$("r0-prod").textContent=fmt(len(p)*len(q),3);
+    const l=len(p);$("r0-where").textContent=l<R-0.005?"P가 원 안 → P′은 원 밖":l>R+0.005?"P가 원 밖 → P′은 원 안":"P가 원 위 → P′ = P"};
+  $("c0-con").addEventListener("change",e=>{con=e.target.checked;b.draw()});
+  b.draw();
+})();
+
+/* ---------- 성질 ① ---------- */
+(()=>{
+  const b=new Board($("b1"),{xmin:-4,xmax:6,ymin:-3.4,ymax:3.4,maxH:470,label:"삼각형 OAP와 삼각형 OP′A′이 닮음인 모습. 두 삼각형은 각 O를 공유한다."});
+  let A=P(1.1,1.5),Pp=P(3.3,-0.9),onC=false;
+  b.handles=[{get:()=>A,set:m=>{A=away(m,O,0.35)},cls:"orig"},{get:()=>Pp,set:m=>{Pp=onC?mul(unit(m),R):away(m,O,0.35)},cls:"orig"}];
+  const far=(u,v)=>len(u)>len(v)?u:v;
+  b.render=b=>{
+    const A2=inv(A),P2=onC?Pp:inv(Pp);let s=b.circ(O,R,onC?"g-fg":"g-inv");
+    s+=b.seg(O,far(A,A2),"g-faint")+b.seg(O,far(Pp,P2),"g-faint");
+    if(!onC){
+      s+=b.poly([O,A,Pp],"f-orig")+b.poly([O,P2,A2],"f-img");
+      s+=b.poly([O,A,Pp],"g-orig g-soft")+b.poly([O,P2,A2],"g-img g-soft");
+      s+=b.seg(Pp,A,"g-orig g-thick")+b.seg(P2,A2,"g-img g-thick");
+      s+=b.arc(O,A,Pp,24,"g-key");
+      s+=b.pt(A2,"pt-img",5)+b.lblDir(A2,"A′","lbl img",add(unit(A2),mul(unit(perp(A2)),0.8)));
+      s+=b.pt(P2,"pt-img",5)+b.lblDir(P2,"P′","lbl img",add(unit(P2),mul(unit(perp(P2)),-0.8)));
+    }else{
+      s+=b.poly([O,A,Pp],"f-orig")+b.poly([O,Pp,A2],"f-img");
+      s+=b.seg(Pp,A,"g-orig g-thick")+b.seg(Pp,A2,"g-key g-thick");
+      s+=b.pt(A2,"pt-key",5.5)+b.lblDir(A2,"A′","lbl key",P(0.3,-1));
+    }
+    s+=b.pt(O,"pt-fg",3.5)+b.lbl(O,"O","lbl",-8,18,"end");
+    s+=b.lblDir(A,"A","lbl orig",add(unit(A),mul(unit(perp(A)),0.8)));
+    s+=b.lblDir(Pp,"P","lbl orig",add(unit(Pp),mul(unit(perp(Pp)),-0.8)));
+    return s;
+  };
+  b.after=()=>{
+    const A2=inv(A),P2=inv(Pp);
+    $("r1-q1").textContent=fmt(len(A)/len(P2),4);$("r1-q2").textContent=fmt(len(Pp)/len(A2),4);
+    $("r1-meas").textContent=fmt(dist(P2,A2),4);$("r1-form").textContent=fmt(dist(Pp,A)*R2/(len(A)*len(Pp)),4);
+    $("r1-ratio").textContent=fmt(dist(Pp,A2)/dist(Pp,A),4);$("r1-rOA").textContent=fmt(R/len(A),4);$("r1-ap").textContent=fpt(A2);
+  };
+  const btn=$("c1-circ");
+  btn.addEventListener("click",()=>{onC=!onC;btn.setAttribute("aria-pressed",String(onC));if(onC)Pp=mul(unit(Pp),R);
+    $("g1-free").hidden=onC;$("g1-circ").hidden=!onC;
+    $("n1").textContent=onC?"P를 원 위에서 돌려도 두 값은 변하지 않습니다. 원 위의 모든 점에서 A′까지 거리는 A까지 거리의 (r ÷ OA)배입니다.":"두 비가 항상 같습니다. 이것이 SAS 닮음의 조건입니다.";
+    $("cap1").textContent=onC?"P를 원을 따라 돌려 보세요. 호박색 선분 PA′은 항상 파란 선분 PA의 같은 배수입니다.":"A와 P를 끌어 보세요. 파란 삼각형 OAP와 빨간 삼각형 OP′A′은 모양이 같고 크기만 다릅니다.";
+    b.draw()});
+  b.draw();
+})();
+
+/* ---------- 성질 ② ---------- */
+(()=>{
+  const b=new Board($("b2"),{xmin:-4.2,xmax:6.2,ymin:-3.6,ymax:3.6,maxH:480,label:"원래 도형(파랑)과 반전된 도형(빨강). O에서 나가는 반직선 위의 점들이 짝을 이룬다."});
+  const modes=[{id:"lineO",name:"O를 지나는 직선"},{id:"line",name:"O를 지나지 않는 직선"},{id:"circO",name:"O를 지나는 원"},{id:"circ",name:"O를 지나지 않는 원"}];
+  let mode="line";
+  let N=P(2.5,0.9),Co=P(1.2,0.8),Cc=P(3.0,1.3),rc=1.0,ra=-2.2,Dd=P(2.6,1.4);
+  const fix=()=>{rc=Math.max(0.25,rc);const dC=len(Cc);if(Math.abs(dC-rc)<0.15)rc=rc<dC?Math.max(0.25,dC-0.15):dC+0.15};
+  const rp=()=>add(Cc,P(rc*Math.cos(ra),rc*Math.sin(ra)));
+  const setHandles=()=>{
+    if(mode==="line")b.handles=[{get:()=>N,set:m=>{N=away(m,O,0.45)},cls:"orig"}];
+    else if(mode==="lineO")b.handles=[{get:()=>Dd,set:m=>{Dd=away(m,O,0.5)},cls:"orig"}];
+    else if(mode==="circO")b.handles=[{get:()=>Co,set:m=>{Co=away(m,O,0.4)},cls:"orig"}];
+    else b.handles=[{get:()=>Cc,set:m=>{Cc=m;fix()},cls:"orig"},{get:rp,set:m=>{const v=sub(m,Cc);rc=len(v);ra=Math.atan2(v.y,v.x);fix()},cls:"orig"}];
+    b.active=0;
+  };
+  const coef=()=>{
+    if(mode==="line"){const n=unit(N);return[0,n.x,n.y,-len(N)]}
+    if(mode==="lineO"){const n=unit(perp(Dd));return[0,n.x,n.y,0]}
+    if(mode==="circO")return[1,-2*Co.x,-2*Co.y,0];
+    return[1,-2*Cc.x,-2*Cc.y,dot(Cc,Cc)-rc*rc];
+  };
+  const samples=()=>{
+    const out=[];
+    if(mode==="line"){const d=unit(perp(N));for(const t of[-3.2,-2.2,-1.3,-0.5,0.5,1.3,2.2,3.2])out.push(add(N,mul(d,t)))}
+    else if(mode==="lineO"){const d=unit(Dd);for(const t of[-3.4,-2.4,-1.4,-0.8,0.8,1.4,2.4,3.4])out.push(mul(d,t))}
+    else if(mode==="circO"){const rho=len(Co),f0=Math.atan2(-Co.y,-Co.x);for(let k=1;k<8;k++){const f=f0+k*2*Math.PI/8;out.push(add(Co,P(rho*Math.cos(f),rho*Math.sin(f))))}}
+    else{for(let k=0;k<8;k++){const f=ra+k*2*Math.PI/8+Math.PI/8;out.push(add(Cc,P(rc*Math.cos(f),rc*Math.sin(f))))}}
+    return out;
+  };
+  b.render=b=>{
+    let s=b.circ(O,R,"g-inv"),orig,img;
+    if(mode==="line"){orig={type:"line",n:unit(N),h:len(N)};img=invLine(orig.n,orig.h)}
+    else if(mode==="lineO"){orig={type:"line",n:unit(perp(Dd)),h:0};img=orig}
+    else if(mode==="circO"){orig={type:"circle",c:Co,r:len(Co)};img=invCircle(Co,len(Co))}
+    else{orig={type:"circle",c:Cc,r:rc};img=invCircle(Cc,rc)}
+    for(const q of samples()){const q2=inv(q);const f=len(q)>len(q2)?q:q2;if(len(f)<60)s+=b.seg(O,f,"g-faint")}
+    s+=b.geo(orig,"g-orig");
+    s+=b.geo(img,mode==="lineO"?"g-img g-dash":"g-img");
+    for(const q of samples()){const q2=inv(q);s+=b.pt(q,"pt-orig",3.2);if(len(q2)<60)s+=b.pt(q2,"pt-img",3.2)}
+    if(mode==="circ"&&img.type==="circle"){
+      const ci=inv(Cc);s+=b.pt(Cc,"pt-orig",3.5)+b.lbl(Cc,"C","lbl orig",8,16);
+      s+=b.cross(ci,"g-key")+b.lbl(ci,"× 중심의 반전점","note-s key",10,18);
+      s+=b.pt(img.c,"pt-img",5)+b.lbl(img.c,"● 반전된 원의 중심","note-s img",10,-10);
+    }
+    if(mode==="circO"){s+=b.pt(Co,"pt-orig",3.5)+b.lbl(Co,"C","lbl orig",8,16)}
+    s+=b.pt(O,"pt-fg",3.5)+b.lbl(O,"O","lbl",-8,18,"end");
+    return s;
+  };
+  b.after=()=>{
+    const[a,bb,c,d]=coef();const r4=R2*R2;
+    const v=[a,bb,c,d,d,R2*bb,R2*c,r4*a];const ids=["k-a","k-b","k-c","k-d","k-a2","k-b2","k-c2","k-d2"];
+    ids.forEach((id,i)=>{$(id).textContent=fmt(v[i],2)});
+    document.querySelectorAll("table.cases tr[data-mode]").forEach(tr=>tr.classList.toggle("cur",tr.dataset.mode===mode));
+    const notes={lineO:"a = 0, d = 0이라 두 자리를 바꿔도 여전히 a = 0, d = 0입니다. 직선 위의 점들은 원 안과 밖이 뒤바뀌며 같은 직선에 남습니다.",
+      line:"a = 0이던 직선이 반전 후 d = 0, 즉 원점을 지나는 원이 됩니다. 직선에서 O에 가장 가까운 점이 원에서 O에 가장 먼 점이 됩니다.",
+      circO:"d = 0이던 원이 반전 후 a = 0, 즉 직선이 됩니다. O 근처의 점들은 직선의 먼 끝으로 날아갑니다.",
+      circ:"a와 d가 모두 0이 아니므로 반전 후에도 O를 지나지 않는 원입니다. 반지름 점을 C 쪽으로 당겨 원이 O에 가까워질수록 상이 커집니다."};
+    $("n2").textContent=notes[mode];
+  };
+  const box=$("c2-modes");
+  modes.forEach(m=>{const bt=document.createElement("button");bt.className="btn";bt.type="button";bt.textContent=m.name;bt.dataset.mode=m.id;bt.setAttribute("aria-pressed",String(m.id===mode));
+    bt.addEventListener("click",()=>{mode=m.id;box.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(x.dataset.mode===mode)));setHandles();b.draw()});box.appendChild(bt)});
+  setHandles();b.draw();
+})();
+
+/* ---------- 성질 ③ ---------- */
+(()=>{
+  const b=new Board($("b3"),{xmin:-2.8,xmax:4.6,ymin:-2.6,ymax:3.4,maxH:450,label:"원과 그 접선, 그리고 반전된 두 도형이 한 점 T′에서 접하는 모습."});
+  const C=P(2.3,1.2),rho=1.0;let ang=3.6;
+  const T=()=>add(C,P(rho*Math.cos(ang),rho*Math.sin(ang)));
+  b.handles=[{get:T,set:m=>{const v=sub(m,C);ang=Math.atan2(v.y,v.x)},cls:"key"}];
+  const geom=()=>{const t=T(),n=unit(sub(t,C)),h=dot(n,t);return{t,n,h,ic:invCircle(C,rho),il:invLine(n,h),tp:inv(t)}};
+  b.render=b=>{
+    const g=geom();let s=b.circ(O,R,"g-inv");
+    s+=b.circ(C,rho,"g-orig")+b.line(g.t,perp(g.n),"g-orig");
+    s+=b.geo(g.ic,"g-img")+b.geo(g.il,"g-img");
+    s+=b.seg(O,len(g.t)>len(g.tp)?g.t:g.tp,"g-faint");
+    s+=b.pt(g.tp,"pt-key",5.5)+b.lblDir(g.tp,"T′","lbl key",add(unit(g.tp),mul(unit(perp(g.tp)),-1)));
+    s+=b.lblDir(g.t,"T","lbl key",sub(g.t,C),17);
+    s+=b.pt(C,"pt-orig",3)+b.pt(O,"pt-fg",3.5)+b.lbl(O,"O","lbl",-8,18,"end");
+    return s;
+  };
+  b.after=()=>{
+    const g=geom();$("r3-t").textContent=fpt(g.t);$("r3-tp").textContent=fpt(g.tp);
+    if(g.il.type==="circle"){const d=dist(g.ic.c,g.il.c),sm=g.ic.r+g.il.r,df=Math.abs(g.ic.r-g.il.r);const ext=Math.abs(d-sm)<Math.abs(d-df);
+      $("r3-d").textContent=fmt(d,4);$("r3-kind").textContent=ext?"반지름의 합 (외접)":"반지름의 차 (내접)";$("r3-s").textContent=fmt(ext?sm:df,4)}
+    else{$("r3-d").textContent="직선";$("r3-kind").textContent="접선이 O를 지남";$("r3-s").textContent="−"}
+  };
+  b.draw();
+})();
+
+/* ---------- 성질 ④ ---------- */
+(()=>{
+  const b=new Board($("b4"),{xmin:-2.6,xmax:6.4,ymin:-3.3,ymax:3.3,maxH:430,interactive:false,label:"중심 (3,0)인 원 ω와 그 반전. 반지름이 √5일 때 반전원과 직교하고 반전해도 제자리에 있다."});
+  const C=P(3,0);let rho=1.6;const sl=$("s4");
+  b.render=b=>{
+    const img=invCircle(C,rho),orth=Math.abs(9-rho*rho-R2)<0.03;let s=b.circ(O,R,"g-inv");
+    s+=b.circ(C,rho,"g-orig "+(orth?"g-thick":""));s+=b.geo(img,orth?"g-img g-dash":"g-img");
+    const x=(9+R2-rho*rho)/6,y2=R2-x*x;
+    if(y2>0){const T=P(x,Math.sqrt(y2));s+=b.seg(O,T,orth?"g-key":"g-thin")+b.seg(C,T,"g-thin")+b.pt(T,"pt-key",4.5)+b.lbl(T,"T","lbl key",6,-10);if(orth)s+=b.right(T,O,C);else s+=b.arc(T,O,C,16,"g-key")}
+    s+=b.pt(C,"pt-orig",3.5)+b.lbl(C,"C","lbl orig",8,18);
+    s+=b.pt(O,"pt-fg",3.5)+b.lbl(O,"O","lbl",-8,18,"end");
+    s+=b.lbl(add(C,P(rho*Math.cos(-0.9),rho*Math.sin(-0.9))),"ω","lbl orig",8,14);
+    return s;
+  };
+  b.after=()=>{
+    const img=invCircle(C,rho),pw=9-rho*rho,orth=Math.abs(pw-R2)<0.03;
+    $("s4v").textContent=fmt(rho,2);$("r4-pow").textContent=fmt(pw,3);
+    const x=(9+R2-rho*rho)/6,y2=R2-x*x;
+    if(y2>0){const T=P(x,Math.sqrt(y2)),u=sub(O,T),v=sub(C,T);const ang=Math.acos(clampN(dot(u,v)/(len(u)*len(v)),-1,1))*180/Math.PI;$("r4-ang").textContent=fmt(ang,1)+"°"}else $("r4-ang").textContent="만나지 않음";
+    $("r4-c").textContent=img.type==="circle"?fpt(img.c):"직선";$("r4-r").textContent=img.type==="circle"?fmt(img.r,3):"∞";
+    const ch=$("r4-chip");ch.textContent=orth?"직교 → 반전해도 제자리":"직교하지 않음 → 다른 원으로 이동";ch.classList.toggle("ok",orth);
+  };
+  sl.addEventListener("input",()=>{rho=+sl.value;b.draw()});
+  $("c4-snap").addEventListener("click",()=>{rho=Math.sqrt(5);sl.value=rho.toFixed(2);b.draw()});
+  b.draw();
+})();
+
+/* ---------- 적용 A ---------- */
+(()=>{
+  const b=new Board($("b5"),{xmin:-1.8,xmax:4.4,ymin:-3.2,ymax:3.2,maxH:460,label:"직선 x=2 위의 점 P와 OP×OQ=4인 점 Q. Q의 자취는 원 (x−1)²+y²=1이다."});
+  let t=1.2,full=false,raf=0;const seen=new Set();const sl=$("s5");
+  const note=v=>seen.add(Math.round(v*50));note(t);
+  b.handles=[{get:()=>P(2,t),set:m=>{t=clampN(m.y,-3,3);sl.value=t.toFixed(2);note(t)},cls:"orig"}];
+  b.render=b=>{
+    const Pp=P(2,t),Q=inv(Pp);let s=b.circ(O,R,"g-inv");
+    s+=b.line(P(2,0),P(0,1),"g-orig");
+    if(full)s+=b.circ(P(1,0),1,"g-img g-dash g-soft");
+    for(const k of seen){const q=inv(P(2,k/50));s+=b.pt(q,"pt-img",1.9)}
+    s+=b.seg(O,Pp,"g-faint");
+    s+=b.pt(Q,"pt-img",5.5)+b.lblDir(Q,"Q","lbl img",P(-0.5,1));
+    s+=b.lbl(Pp,"P","lbl orig",12,-8);
+    s+=full?b.pt(O,"pt-hollow",5)+b.lbl(O,"O (제외)","note-s",-10,20,"end"):b.pt(O,"pt-fg",3.5)+b.lbl(O,"O","lbl",-8,18,"end");
+    s+=b.lbl(P(2,-2.9),"x = 2","note-s orig",8,0);
+    return s;
+  };
+  b.after=()=>{const Pp=P(2,t),Q=inv(Pp);$("r5-p").textContent=fpt(Pp);$("r5-q").textContent=fpt(Q,3);$("r5-prod").textContent=fmt(len(Pp)*len(Q),3);$("r5-eq").textContent=fmt(Q.x*Q.x+Q.y*Q.y-2*Q.x,4)};
+  sl.addEventListener("input",()=>{t=+sl.value;note(t);b.draw()});
+  $("c5-full").addEventListener("change",e=>{full=e.target.checked;b.draw()});
+  $("c5-play").addEventListener("click",()=>{
+    cancelAnimationFrame(raf);
+    if(reduceMotion){for(let v=-3;v<=3.0001;v+=0.02)note(v);t=3;sl.value="3";b.draw();return}
+    const t0=performance.now(),D=3600;
+    const step=now=>{const k=Math.min(1,(now-t0)/D);t=-3+6*k;note(t);sl.value=t.toFixed(2);b.draw();if(k<1)raf=requestAnimationFrame(step)};
+    raf=requestAnimationFrame(step);
+  });
+  b.draw();
+})();
+
+/* ---------- 적용 B ---------- */
+(()=>{
+  const presets=[
+    {A:P(1,0),Ap:P(4,0),B:P(-8,5),k:2,kl:"2 × PA",expr:"2PA + PB",th:1.0,bounds:{xmin:-9,xmax:5.4,ymin:-3,ymax:6.6},
+     cap:"예제 1. 원 x²+y²=4 위의 P, A(1, 0), B(−8, 5). A′(4, 0)을 잡으면 PA′ = 2PA이므로 2PA + PB = PA′ + PB ≥ A′B = 13. P를 원 위에서 돌려 보세요."},
+    {A:P(4,0),Ap:P(1,0),B:P(1,5),k:0.5,kl:"PA ÷ 2",expr:"PA/2 + PB",th:-0.4,bounds:{xmin:-3.2,xmax:5.2,ymin:-3,ymax:6.2},
+     cap:"예제 2. 원 x²+y²=4 위의 P, A(4, 0), B(1, 5). A가 밖에 있으므로 반전점 A′(1, 0)이 안쪽에 생기고 PA/2 = PA′. 따라서 PA/2 + PB ≥ A′B = 5."}
+  ];
+  let pi=0,th=presets[0].th;
+  const host=$("b6");let b=null;
+  const f=(pr,a)=>{const p=P(R*Math.cos(a),R*Math.sin(a));return pr.k*dist(p,pr.A)+dist(p,pr.B)};
+  const hits=pr=>{const d=sub(pr.B,pr.Ap),qa=dot(d,d),qb=2*dot(pr.Ap,d),qc=dot(pr.Ap,pr.Ap)-R2,disc=qb*qb-4*qa*qc;if(disc<0)return[];const out=[];for(const sg of[-1,1]){const tt=(-qb+sg*Math.sqrt(disc))/(2*qa);if(tt>=-1e-9&&tt<=1+1e-9)out.push(add(pr.Ap,mul(d,tt)))}return out};
+  const chartHost=$("ch6");
+  const drawChart=()=>{
+    const pr=presets[pi],w=Math.max(200,Math.floor(chartHost.clientWidth||260)),h=150,pl=40,prt=22,pt=12,pb=26;
+    const n=180,vals=[];for(let i=0;i<=n;i++){const a=i/n*2*Math.PI;vals.push(f(pr,a))}
+    const mn=dist(pr.Ap,pr.B),mx=Math.max(...vals),lo=Math.floor(mn-1),hi=Math.ceil(mx);
+    const X=i=>pl+(w-pl-prt)*i/n,Y=v=>pt+(h-pt-pb)*(1-(v-lo)/(hi-lo));
+    let s=`<svg viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" role="img" aria-label="P의 방향각에 따른 ${pr.expr}의 값. 최솟값 ${fmt(mn,0)}">`;
+    for(const deg of[0,90,180,270,360]){const i=deg/360*n;s+=`<line class="g-grid" x1="${X(i)}" y1="${pt}" x2="${X(i)}" y2="${h-pb}"/><text class="tick" x="${X(i)}" y="${h-8}" text-anchor="middle">${deg}°</text>`}
+    for(const v of[mn,hi]){s+=`<text class="tick" x="${pl-6}" y="${Y(v)+4}" text-anchor="end">${fmt(v,v===mn?0:0)}</text>`}
+    s+=`<line class="g-key g-dash" x1="${pl}" y1="${Y(mn)}" x2="${w-prt}" y2="${Y(mn)}" style="stroke-width:1.4"/>`;
+    s+=`<polyline class="g-fg" points="${vals.map((v,i)=>`${X(i).toFixed(1)},${Y(v).toFixed(1)}`).join(" ")}"/>`;
+    let a=th%(2*Math.PI);if(a<0)a+=2*Math.PI;const ci=a/(2*Math.PI)*n;
+    s+=`<line class="g-faint" x1="${X(ci)}" y1="${pt}" x2="${X(ci)}" y2="${h-pb}"/><circle class="pt-key" cx="${X(ci)}" cy="${Y(f(pr,a))}" r="5"/>`;
+    s+=`</svg>`;chartHost.innerHTML=s;
+  };
+  if(window.ResizeObserver)new ResizeObserver(()=>drawChart()).observe(chartHost);
+  b=new Board(host,Object.assign({maxH:470,label:"원 x²+y²=4 위의 점 P에 대해 가중 거리 합을 보조점 A′를 이용해 PA′+PB로 바꾸는 모습"},presets[0].bounds));
+  b.handles=[{get:()=>P(R*Math.cos(th),R*Math.sin(th)),set:m=>{th=Math.atan2(m.y,m.x)},cls:"orig"}];
+  const build=()=>{
+    const pr=presets[pi];
+    Object.assign(b.o,pr.bounds);b.W=0;
+    b.render=b=>{
+      const p=P(R*Math.cos(th),R*Math.sin(th));let s="";
+      s+=b.circ(O,R,"g-fg")+b.lbl(P(R*Math.cos(2.4),R*Math.sin(2.4)),"x²+y²=4","note-s",-6,-6,"end");
+      s+=b.seg(pr.Ap,pr.B,"g-key g-dash g-soft");
+      const mid=mul(add(pr.Ap,pr.B),0.5);s+=b.lbl(mid,`A′B = ${fmt(dist(pr.Ap,pr.B),0)}`,"note-s key",10,-8);
+      for(const hpt of hits(pr))s+=b.pt(hpt,"pt-ring",8);
+      s+=b.seg(p,pr.A,"g-orig")+b.seg(p,pr.Ap,"g-key")+b.seg(p,pr.B,"g-fg");
+      s+=b.pt(pr.A,"pt-orig",5)+b.lbl(pr.A,"A","lbl orig",6,20);
+      s+=b.pt(pr.Ap,"pt-key",5)+b.lbl(pr.Ap,"A′","lbl key",6,20);
+      s+=b.pt(pr.B,"pt-fg",5)+b.lbl(pr.B,"B","lbl",9,-9);
+      s+=b.pt(O,"pt-fg",3.5)+b.lbl(O,"O","lbl",-8,18,"end");
+      s+=b.lblDir(p,"P","lbl orig",p,17);
+      return s;
+    };
+    b.after=()=>{
+      const p=P(R*Math.cos(th),R*Math.sin(th));const kpa=pr.k*dist(p,pr.A),pap=dist(p,pr.Ap),pb=dist(p,pr.B);
+      $("r6-kl").innerHTML=`<span class="m">${pr.kl.replace("PA","<i>PA</i>")}</span>`;$("r6-k").textContent=fmt(kpa,4);$("r6-ap").textContent=fmt(pap,4);$("r6-b").textContent=fmt(pb,4);
+      $("r6-sl").innerHTML=`<span class="m">${pr.expr.replace(/PA/g,"<i>PA</i>").replace("PB","<i>PB</i>")}</span>`;$("r6-sum").textContent=fmt(kpa+pb,4);$("r6-min").textContent=fmt(dist(pr.Ap,pr.B),4);
+      $("h6-expr").textContent=`실시간 값 · ${pr.expr}`;drawChart();
+    };
+    $("cap6").textContent=pr.cap;b.resize();
+  };
+  const tabs=[$("c6-p0"),$("c6-p1")];
+  tabs.forEach((bt,i)=>bt.addEventListener("click",()=>{pi=i;th=presets[i].th;tabs.forEach((x,j)=>x.setAttribute("aria-pressed",String(i===j)));build()}));
+  $("c6-min").addEventListener("click",()=>{const hs=hits(presets[pi]);if(hs.length){th=Math.atan2(hs[0].y,hs[0].x);b.draw()}});
+  build();
+})();
+
+/* ---------- 적용 C ---------- */
+(()=>{
+  const bl=new Board($("b7a"),{xmin:-0.4,xmax:4.4,ymin:-2.35,ymax:2.35,maxH:400,interactive:false,label:"원점에서 접하는 두 원 C₁, C₂ 사이에 끼인 원들의 사슬(파푸스 체인)."});
+  const br=new Board($("b7b"),{xmin:-0.3,xmax:2.7,ymin:-3.6,ymax:3.6,maxH:400,interactive:false,label:"반전 후 두 원은 직선 x=1, x=2가 되고 사슬의 원들은 띠 안에 쌓인 반지름 1/2의 동전이 된다."});
+  let sel=1;const sl=$("s7");const NS_=[-4,-3,-2,-1,0,1,2,3,4];
+  const orig=n=>invCircle(P(1.5,n),0.5);
+  bl.render=b=>{
+    let s=b.circ(O,R,"g-inv g-soft");
+    s+=b.circ(P(1,0),1,"g-orig")+b.circ(P(2,0),2,"g-orig");
+    for(const n of NS_){const g=orig(n);s+=b.circ(g.c,g.r,n===sel?"g-key g-thick":"g-thin")}
+    const g=orig(sel);s+=b.seg(P(g.c.x,0),g.c,"g-key g-dash")+b.pt(g.c,"pt-key",3.5);
+    s+=b.lbl(P(1,-1),"C₁","lbl orig",0,20,"middle")+b.lbl(P(2+2*Math.cos(-0.55),2*Math.sin(-0.55)),"C₂","lbl orig",10,14)+b.pt(O,"pt-fg",3.5)+b.lbl(O,"O","lbl",-6,18,"end");
+    return s;
+  };
+  br.render=b=>{
+    let s=b.circ(O,R,"g-inv g-soft");
+    s+=b.line(P(1,0),P(0,1),"g-img")+b.line(P(2,0),P(0,1),"g-img");
+    for(const n of NS_){s+=b.circ(P(1.5,n),0.5,n===sel?"g-key g-thick":"g-thin")}
+    s+=b.seg(P(1.5,0),P(1.5,sel),"g-key g-dash")+b.pt(P(1.5,sel),"pt-key",3.5);
+    s+=b.lbl(P(1,3.3),"x=1","note-s img",-4,0,"end")+b.lbl(P(2,3.3),"x=2","note-s img",4,0)+b.pt(O,"pt-fg",3.5)+b.lbl(O,"O","lbl",-6,18,"end");
+    return s;
+  };
+  const upd=()=>{
+    const g=orig(sel);$("s7v").textContent=String(sel).replace("-","−");
+    $("r7-c2").textContent=fpt(P(1.5,sel),3);$("r7-c").textContent=fpt(g.c,3);
+    const fr={0:"1",1:"2/3",2:"1/3",3:"2/11"}[Math.abs(sel)];$("r7-r").textContent=`${fmt(g.r,3)} (= ${fr})`;
+    $("r7-h").textContent=fmt(g.c.y/(2*g.r),3);
+  };
+  const setSel=n=>{sel=clampN(n,-3,3);sl.value=String(sel);bl.draw();br.draw();upd()};
+  bl.onclick=m=>{let best=null;for(const n of NS_){const g=orig(n);if(dist(m,g.c)<=g.r&&(best===null||orig(best).r>g.r))best=n}if(best!==null)setSel(best)};
+  br.onclick=m=>{if(m.x>1&&m.x<2)setSel(Math.round(m.y))};
+  sl.addEventListener("input",()=>setSel(+sl.value));
+  bl.draw();br.draw();upd();
+})();
+
+/* ---------- 톨레미 ---------- */
+(()=>{
+  const b=new Board($("b8"),{xmin:-4.6,xmax:4.6,ymin:-3.4,ymax:3.4,maxH:470,label:"네 점 A, B, C, D와 A를 중심으로 반전한 B′, C′, D′. D가 A, B, C를 지나는 원 위에 오면 B′, C′, D′이 한 직선 위에 놓인다."});
+  let A=P(-2.4,-0.7),B=P(-0.5,2.0),C=P(2.3,1.1),D=P(1.1,-2.0),showInv=true;const RI=4;
+  const keep=(q,others)=>{for(const o of others){if(dist(q,o)<0.35)q=add(o,mul(unit(sub(q,o)),0.35))}return q};
+  b.handles=[{get:()=>A,set:m=>{A=keep(m,[B,C,D])},cls:"orig"},{get:()=>B,set:m=>{B=keep(away(m,A,0.5),[C,D])},cls:"orig"},{get:()=>C,set:m=>{C=keep(away(m,A,0.5),[B,D])},cls:"orig"},{get:()=>D,set:m=>{D=keep(away(m,A,0.5),[B,C])},cls:"orig"}];
+  const circum=(a,bb,c)=>{const d=2*(a.x*(bb.y-c.y)+bb.x*(c.y-a.y)+c.x*(a.y-bb.y));if(Math.abs(d)<1e-6)return null;const a2=dot(a,a),b2=dot(bb,bb),c2=dot(c,c);const u=P((a2*(bb.y-c.y)+b2*(c.y-a.y)+c2*(a.y-bb.y))/d,(a2*(c.x-bb.x)+b2*(a.x-c.x)+c2*(bb.x-a.x))/d);return{c:u,r:dist(u,a)}};
+  b.render=b=>{
+    let s="";const cc=circum(A,B,C);
+    if(cc&&cc.r<40)s+=b.circ(cc.c,cc.r,"g-fg g-dash g-soft");
+    s+=b.poly([A,B,C,D],"g-orig");s+=b.seg(A,C,"g-orig g-soft")+b.seg(B,D,"g-orig g-soft");
+    if(showInv){
+      const Bp=inv(B,RI,A),Cp=inv(C,RI,A),Dp=inv(D,RI,A);
+      s+=b.circ(A,2,"g-inv");s+=b.poly([Bp,Cp,Dp],"f-img")+b.poly([Bp,Cp,Dp],"g-img");
+      s+=b.pt(Bp,"pt-img",4.5)+b.lbl(Bp,"B′","lbl img",8,-8)+b.pt(Cp,"pt-img",4.5)+b.lbl(Cp,"C′","lbl img",8,-8)+b.pt(Dp,"pt-img",4.5)+b.lbl(Dp,"D′","lbl img",8,16);
+    }
+    const cen=mul(add(add(A,B),add(C,D)),0.25);
+    for(const[p,t]of[[A,"A"],[B,"B"],[C,"C"],[D,"D"]])s+=b.lblDir(p,t,"lbl orig",sub(p,cen),17);
+    return s;
+  };
+  b.after=()=>{
+    const l=dist(A,B)*dist(C,D)+dist(A,D)*dist(B,C),r=dist(A,C)*dist(B,D);
+    const Bp=inv(B,RI,A),Cp=inv(C,RI,A),Dp=inv(D,RI,A);
+    $("r8-l").textContent=fmt(l,4);$("r8-r").textContent=fmt(r,4);$("r8-d").textContent=fmt(l-r,4);
+    $("r8-il").textContent=fmt(dist(Bp,Cp)+dist(Cp,Dp),4);$("r8-ir").textContent=fmt(dist(Bp,Dp),4);
+    const eq=Math.abs(l-r)<0.01;const ch=$("r8-chip");ch.textContent=eq?"등호 성립 · 네 점이 한 원 위":"부등호 · 좌변이 더 큼";ch.classList.toggle("ok",eq);
+  };
+  $("c8-inv").addEventListener("change",e=>{showInv=e.target.checked;b.draw()});
+  $("c8-snap").addEventListener("click",()=>{
+    const cc=circum(A,B,C);if(!cc)return;const u=cc.c,TW=2*Math.PI,md=v=>((v%TW)+TW)%TW;
+    const al=Math.atan2(A.y-u.y,A.x-u.x),be=Math.atan2(B.y-u.y,B.x-u.x),ga=Math.atan2(C.y-u.y,C.x-u.x);
+    const span=md(al-ga);let mid;if(md(be-ga)<span){mid=ga-md(ga-al)/2}else{mid=ga+span/2}
+    D=add(u,P(cc.r*Math.cos(mid),cc.r*Math.sin(mid)));b.draw();
+  });
+  b.draw();
+})();
+
+})();
+</script>
+
+</body>
+</html>
