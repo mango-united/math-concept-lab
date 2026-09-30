@@ -7,8 +7,15 @@
 ```
 index.html            목차 페이지 (노트 목록)
 inversion/index.html  반전 기하 실험실
+CLAUDE.md             Claude Code가 작업 시작 때 읽는 안내
+docs/HANDOFF.md       작업 인계 노트 (현재 상태, 열린 요청, 작업 기록)
+docs/CONTENT.md       수학 내용의 기준 (범위, 검산된 값, 후보 노트)
 .nojekyll             GitHub Pages가 파일을 그대로 올리도록 하는 표시
 ```
+
+## 함께 작업하는 방법
+
+수학 내용은 Claude(claude.ai 대화), 코드와 백엔드는 Claude Code가 맡습니다. 둘은 직접 대화할 수 없으므로 `docs/HANDOFF.md`에 부탁할 일과 한 일을 적어 주고받습니다. 자세한 규칙은 `CLAUDE.md`에 있습니다.
 
 노트 하나가 폴더 하나입니다. 각 페이지는 HTML 파일 하나에 스타일과 스크립트가 모두 들어 있어서, 별도의 빌드 과정이 없습니다.
 
