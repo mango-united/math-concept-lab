@@ -26,6 +26,7 @@
 
 최신 기록이 맨 위에 옵니다. 형식: `날짜 · 누가 · 한 일 (관련 요청 ID)`
 
+- 2026-10-15 · Claude · 발전기 실험실 3D 장면을 화면 크기에 맞춰 자동으로 꽉 차게 맞춤 (`generator/`)
 - 2026-10-15 · Claude · 발전기 가상 실험실 `generator/` 추가 (목차 미등록, 별도 과학 페이지)
 - 2026-09-30 · Claude · 연락장 체계 추가: `CLAUDE.md`, `docs/HANDOFF.md`, `docs/CONTENT.md` 작성, README 갱신
 - 2026-09-30 · Claude · 저장소 생성, 목차 페이지와 반전 기하 실험실 공개, GitHub Pages 배포 확인

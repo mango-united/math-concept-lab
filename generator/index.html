@@ -88,12 +88,12 @@ button, input { font: inherit; color: inherit; }
   gap: 8px;
   pointer-events: none;
 }
-.brand { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 12px; }
+.brand { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 12px; align-self: stretch; }
 h1 { margin: 0; font: 400 26px/1.15 var(--font-display); letter-spacing: 0.01em; text-wrap: balance; }
 .eyebrow { font-size: 12.5px; letter-spacing: 0.03em; color: var(--muted); }
 .caption {
   margin: 0;
-  max-width: 58ch;
+  max-width: min(760px, 100%);
   padding: 9px 12px;
   border: 1px solid var(--rule);
   border-radius: 10px;
@@ -115,6 +115,7 @@ h1 { margin: 0; font: 400 26px/1.15 var(--font-display); letter-spacing: 0.01em;
 }
 .hint {
   pointer-events: auto;
+  margin-left: auto;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -420,7 +421,9 @@ input[type="range"] { width: 100%; margin: 0; accent-color: var(--c-current); cu
 .concept-body p { margin: 0; }
 
 @media (max-height: 820px) and (min-width: 861px) {
-  #graph { height: 128px; }
+  #graph { height: 112px; }
+  .readouts { gap: 4px 10px; }
+  #data { padding-block: 10px 12px; gap: 8px; }
 }
 @media (max-width: 1180px) and (min-width: 861px) {
   :root { --panel-w: 318px; }
@@ -442,6 +445,7 @@ input[type="range"] { width: 100%; margin: 0; accent-color: var(--c-current); cu
   .stage-head { top: 10px; gap: 6px; }
   .hint-fine { display: none; }
   .hint-coarse { display: inline; }
+  .hint { margin-left: 0; }
   h1 { font-size: 19px; }
   .eyebrow { display: none; }
   .caption { max-width: 100%; padding: 7px 10px; font-size: 12.5px; }
@@ -469,14 +473,14 @@ input[type="range"] { width: 100%; margin: 0; accent-color: var(--c-current); cu
       <div class="brand">
         <h1>발전기 가상 실험실</h1>
         <span class="eyebrow">전자기 유도 · 교류와 직류</span>
+        <div id="hint" class="hint">
+          <span class="hint-fine">드래그로 시점 회전 · 휠로 확대 · 스페이스로 재생/정지 · ←/→로 15°씩</span>
+          <span class="hint-coarse">한 손가락으로 시점 회전 · 두 손가락으로 확대</span>
+          <button type="button" id="hintClose">닫기</button>
+        </div>
       </div>
       <p id="caption" class="caption" aria-live="polite">코일이 돌면 코일을 지나는 선속이 계속 바뀌어요. 그래서 유도 전류의 세기와 방향이 반 바퀴마다 바뀌는 교류가 흘러요.</p>
       <p id="pausedChip" class="chip" hidden>일시정지 중 · 이 각도를 지나는 순간의 전류를 보여줘요</p>
-      <div id="hint" class="hint">
-        <span class="hint-fine">드래그로 시점 회전 · 휠로 확대 · 스페이스로 재생/정지 · ←/→로 15°씩</span>
-        <span class="hint-coarse">한 손가락으로 시점 회전 · 두 손가락으로 확대</span>
-        <button type="button" id="hintClose">닫기</button>
-      </div>
     </div>
     <div id="loading" class="stage-msg" role="status"><span id="loadingText">3D 실험 장치를 불러오는 중이에요…</span></div>
   </section>
@@ -1844,49 +1848,104 @@ function init() {
   G.onCommutate = () => { spark = 0.4; };
 
   // ── views ──
-  // offset: 화면 위쪽 설명 글에 가리지 않도록 장면을 오른쪽·아래로 미는 비율
+  // 각 시점은 방향만 정해 두고, 거리는 화면 크기에 맞춰 계산한다.
+  // 장치의 주요 지점들이 설명 글 아래의 빈 공간을 최대한 채우도록 맞춘다.
   const VIEWS = {
-    overview: { pos: [5.4, 9.6, 12.4], target: [0, -0.6, 1.3], fov: 36, offset: [0.05, 0.09] },
-    coil: { pos: [0, 0.15, 15.6], target: [0, 0, 0], fov: 24, offset: [0, 0.07] },
-    circuit: { pos: [0.8, 6.4, 12.4], target: [0, -1.4, 3.3], fov: 36, offset: [0.03, 0.1] },
+    overview: { dir: [0.42, 0.545, 0.726], target: [0, -0.6, 1.3], fov: 36 },
+    coil: { dir: [0, 0.15, 15.6], target: [0, 0, 0], fov: 24 },
+    circuit: { dir: [0.8, 7.8, 9.1], target: [0, -1.4, 3.3], fov: 36 },
+  };
+  const MAG_TOP = POLE_H / 2 + 0.15; // 자석 윗면(N·S 글자가 있는 면)까지 보이게
+  const magnetPts = [];
+  for (const x of [-2.7, 2.7]) for (const y of [TABLE_Y, POLE_H / 2]) for (const z of [-POLE_D / 2, POLE_D / 2]) magnetPts.push(V3(x, y, z));
+  const circuitPts = [
+    V3(-SIDE_X, WIRE_Y, Z_RING_D), V3(SIDE_X, WIRE_Y, Z_RING_D), V3(-SIDE_X, WIRE_Y, Z_FRONT + 0.3), V3(SIDE_X, WIRE_Y, Z_FRONT + 0.3),
+    V3(GALV_X - 0.63, TABLE_Y + 0.95, Z_FRONT + 0.25), V3(GALV_X + 0.63, TABLE_Y + 0.95, Z_FRONT + 0.25),
+    V3(BULB_X, TABLE_Y + 1.3, Z_FRONT), V3(-WIRE_POST_X, 0.3, Z_RING_A), V3(WIRE_POST_X, 0.3, Z_RING_A),
+  ];
+  const FIT_POINTS = {
+    overview: [...magnetPts, ...circuitPts],
+    coil: [V3(-2.7, MAG_TOP, 0), V3(2.7, MAG_TOP, 0), V3(-2.7, -1.3, 0), V3(2.7, -1.3, 0),
+      V3(-2.7, MAG_TOP, POLE_D / 2), V3(2.7, MAG_TOP, POLE_D / 2), V3(-2.7, -1.3, POLE_D / 2), V3(2.7, -1.3, POLE_D / 2)],
+    circuit: [...circuitPts, V3(-1.2, 0.95, Z_COMM), V3(1.2, 0.95, Z_COMM)],
   };
   let currentView = 'overview', userMoved = false, tween = null;
-  const viewOff = { x: VIEWS.overview.offset[0], y: VIEWS.overview.offset[1] };
-  const fitFactor = () => {
-    const a = camera.aspect || 1.6;
-    return a < 1.35 ? Math.min(1.9, Math.pow(1.35 / a, 0.85)) : 1;
-  };
-  function applyViewOffset() {
+  const viewShift = { x: 0, y: 0 }; // 장면을 화면 안에서 옮기는 양(NDC)
+  function applyViewShift() {
     const w = Math.max(1, view.clientWidth), h = Math.max(1, view.clientHeight);
-    const narrow = w < 700;
-    camera.setViewOffset(w, h, -viewOff.x * (narrow ? 0 : w), -viewOff.y * h, w, h);
+    camera.setViewOffset(w, h, (-viewShift.x * w) / 2, (viewShift.y * h) / 2, w, h);
   }
-  function viewPose(name) {
+  // 설명 글(제목·설명·안내) 아래에서 장치를 놓을 수 있는 영역
+  function freeRect() {
+    const sr = view.getBoundingClientRect();
+    const head = document.querySelector('.stage-head');
+    const w = Math.max(1, sr.width), h = Math.max(1, sr.height);
+    const headBottom = head ? head.getBoundingClientRect().bottom - sr.top : 0;
+    const m = Math.max(8, Math.min(w, h) * 0.025);
+    return { x0: m, x1: w - m, y0: Math.min(h * 0.42, Math.max(m, headBottom + 6)), y1: h - m, w, h };
+  }
+  const fitCam = new THREE.PerspectiveCamera();
+  const _fp = new THREE.Vector3();
+  function computeFit(name) {
     const v = VIEWS[name];
     const t = V3(...v.target);
-    const p = V3(...v.pos).sub(t).multiplyScalar(fitFactor()).add(t);
-    return { p, t };
+    const dir = V3(...v.dir).normalize();
+    const fr = freeRect();
+    fitCam.fov = v.fov;
+    fitCam.aspect = fr.w / fr.h;
+    fitCam.near = 0.1;
+    fitCam.far = 200;
+    fitCam.updateProjectionMatrix();
+    const pts = FIT_POINTS[name];
+    const bounds = (d) => {
+      fitCam.position.copy(t).addScaledVector(dir, d);
+      fitCam.lookAt(t);
+      fitCam.updateMatrixWorld();
+      const b = { x0: Infinity, x1: -Infinity, y0: Infinity, y1: -Infinity, ok: true };
+      for (const p of pts) {
+        _fp.copy(p).project(fitCam);
+        if (_fp.z > 1 || _fp.z < -1) b.ok = false;
+        b.x0 = Math.min(b.x0, _fp.x); b.x1 = Math.max(b.x1, _fp.x);
+        b.y0 = Math.min(b.y0, _fp.y); b.y1 = Math.max(b.y1, _fp.y);
+      }
+      return b;
+    };
+    const fx0 = (fr.x0 / fr.w) * 2 - 1, fx1 = (fr.x1 / fr.w) * 2 - 1;
+    const fy1 = 1 - (fr.y0 / fr.h) * 2, fy0 = 1 - (fr.y1 / fr.h) * 2;
+    let lo = 4, hi = 90;
+    for (let i = 0; i < 30; i++) {
+      const d = (lo + hi) / 2;
+      const b = bounds(d);
+      if (b.ok && b.x1 - b.x0 <= fx1 - fx0 && b.y1 - b.y0 <= fy1 - fy0) hi = d;
+      else lo = d;
+    }
+    const b = bounds(hi);
+    return {
+      pos: t.clone().addScaledVector(dir, hi),
+      target: t,
+      fov: v.fov,
+      shift: [(fx0 + fx1) / 2 - (b.x0 + b.x1) / 2, (fy0 + fy1) / 2 - (b.y0 + b.y1) / 2],
+    };
   }
   G.setView = (name, instant) => {
     if (!VIEWS[name]) return;
     currentView = name;
     userMoved = false;
-    const v = VIEWS[name];
-    const { p, t } = viewPose(name);
+    const f = computeFit(name);
     if (instant || G.reduceMotion) {
       tween = null;
-      camera.position.copy(p);
-      controls.target.copy(t);
-      camera.fov = v.fov;
-      viewOff.x = v.offset[0]; viewOff.y = v.offset[1];
-      applyViewOffset();
+      camera.position.copy(f.pos);
+      controls.target.copy(f.target);
+      camera.fov = f.fov;
+      viewShift.x = f.shift[0]; viewShift.y = f.shift[1];
+      applyViewShift();
       camera.updateProjectionMatrix();
       controls.update();
       return;
     }
     tween = {
-      p0: camera.position.clone(), t0: controls.target.clone(), p1: p, t1: t,
-      f0: camera.fov, f1: v.fov, o0: [viewOff.x, viewOff.y], o1: v.offset,
+      p0: camera.position.clone(), t0: controls.target.clone(), p1: f.pos, t1: f.target,
+      f0: camera.fov, f1: f.fov, o0: [viewShift.x, viewShift.y], o1: f.shift,
       start: performance.now(), dur: 950,
     };
   };
@@ -1895,18 +1954,29 @@ function init() {
     userMoved = true;
     if (G.onUserOrbit) G.onUserOrbit();
   });
+  // 처음 화면을 끌어 보면 사용법 안내는 할 일을 마쳤으니 접는다
+  renderer.domElement.addEventListener('pointerdown', () => {
+    const hint = document.getElementById('hint');
+    if (hint && !hint.hidden) {
+      hint.hidden = true;
+      try { localStorage.setItem('genlab.hintClosed', '1'); } catch (e) { /* storage unavailable */ }
+    }
+  }, { once: true });
   function resize() {
     const w = Math.max(1, view.clientWidth), h = Math.max(1, view.clientHeight);
     renderer.setSize(w, h, false);
     labelRenderer.setSize(w, h);
     camera.aspect = w / h;
-    applyViewOffset();
+    applyViewShift();
     camera.updateProjectionMatrix();
     if (!userMoved && !tween) G.setView(currentView, true);
   }
   if (window.ResizeObserver) new ResizeObserver(resize).observe(view);
   else window.addEventListener('resize', resize);
   resize();
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(() => { if (!userMoved && !tween) G.setView(currentView, true); });
+  }
 
   // ── self-check: geometry against the formulas ──
   function selfCheck() {
@@ -1968,9 +2038,9 @@ function init() {
       camera.position.lerpVectors(tween.p0, tween.p1, e);
       controls.target.lerpVectors(tween.t0, tween.t1, e);
       camera.fov = tween.f0 + (tween.f1 - tween.f0) * e;
-      viewOff.x = tween.o0[0] + (tween.o1[0] - tween.o0[0]) * e;
-      viewOff.y = tween.o0[1] + (tween.o1[1] - tween.o0[1]) * e;
-      applyViewOffset();
+      viewShift.x = tween.o0[0] + (tween.o1[0] - tween.o0[0]) * e;
+      viewShift.y = tween.o0[1] + (tween.o1[1] - tween.o0[1]) * e;
+      applyViewShift();
       camera.updateProjectionMatrix();
       if (k >= 1) tween = null;
     }
