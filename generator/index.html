@@ -18,7 +18,8 @@
 }
 </script>
 <style>
-/* Layout: a full-bleed 3D bench with a measurement console docked under it and the control panel on the right; on phones the bench sticks to the top and the console and controls scroll beneath it. */
+/* Layout: a full-bleed 3D bench with a measurement console docked under it and the control panel on the right; on phones the bench sticks to the top and the console and controls scroll beneath it.
+   Simple view (body.simple): the bench takes the whole left side and the right column holds only the play button, the colour key and the graph. */
 :root {
   color-scheme: dark;
   --ink: #0a1020;
@@ -37,6 +38,7 @@
   --c-induced: #ff8a3d;
   --c-area: #b593ff;
   --c-vel: #5cf2a0;
+  --c-force: #ff4f7b;
   --c-n: #ec4a52;
   --c-s: #4a83f2;
   --g-phi: #2f9bd2;
@@ -420,6 +422,46 @@ input[type="range"] { width: 100%; margin: 0; accent-color: var(--c-current); cu
 .concept-body h3 { margin: 0 0 3px; font-size: 13.5px; font-weight: 600; color: var(--text); }
 .concept-body p { margin: 0; }
 
+/* ── View switch and simple view ── */
+.mode-seg {
+  pointer-events: auto;
+  border-color: var(--rule-strong);
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+.mode-seg button { white-space: nowrap; }
+body:not(.simple) .simple-only, body.simple .full-only { display: none !important; }
+.simple-top { display: flex; flex-direction: column; gap: 14px; padding-bottom: 18px; border-bottom: 1px solid var(--rule); }
+.btn.play-wide { min-height: 46px; font-size: 15px; }
+.btn.play-wide svg { width: 15px; height: 15px; }
+.keys { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; font-size: 13.5px; }
+.keys li { display: grid; grid-template-columns: 28px minmax(0, 1fr); align-items: center; gap: 10px; }
+.keys small { display: block; margin-top: 1px; font-size: 12px; color: var(--muted); }
+.sw-dots { height: 8px; background: radial-gradient(circle closest-side, var(--c) 85%, transparent) left center / 9px 8px space no-repeat; }
+.sw-arrow { height: 12px; background: var(--c); clip-path: polygon(0 36%, 62% 36%, 62% 0, 100% 50%, 62% 100%, 62% 64%, 0 64%); }
+body.simple #app {
+  grid-template-columns: minmax(0, 1fr) var(--panel-w);
+  grid-template-rows: minmax(0, 1fr);
+  grid-template-areas: "stage data";
+}
+body.simple #data {
+  min-height: 0;
+  overflow-y: auto;
+  gap: 16px;
+  padding-block: 20px 28px;
+  padding-left: 18px;
+  padding-right: max(18px, env(safe-area-inset-right, 0px));
+  border-top: 0;
+  border-left: 1px solid var(--rule);
+  scrollbar-width: thin;
+  scrollbar-color: var(--rule-strong) transparent;
+}
+body.simple .data-body { grid-template-columns: minmax(0, 1fr); }
+body.simple #graph { height: clamp(180px, 34vh, 290px); }
+
+/* 제목 줄에 보기 전환까지 들어가도록, 좁은 화면에서는 부제를 뺀다 */
+@media (max-width: 1359px) { .eyebrow { display: none; } }
 @media (max-height: 820px) and (min-width: 861px) {
   #graph { height: 112px; }
   .readouts { gap: 4px 10px; }
@@ -459,6 +501,21 @@ input[type="range"] { width: 100%; margin: 0; accent-color: var(--c-current); cu
     padding-left: max(16px, env(safe-area-inset-left, 0px));
     padding-right: max(16px, env(safe-area-inset-right, 0px));
   }
+  body.simple #data {
+    overflow: visible;
+    gap: 12px;
+    padding-block: 14px 16px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    border-left: 0;
+  }
+  /* 재생 버튼과 색 설명을 한 줄에 두어 그래프까지 한 화면에 들어오게 한다 */
+  .simple-top { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 14px; padding-bottom: 14px; }
+  .btn.play-wide { align-self: stretch; padding: 0 16px; }
+  .keys { gap: 5px; font-size: 12.5px; }
+  .keys li { grid-template-columns: 22px minmax(0, 1fr); gap: 8px; }
+  .keys small { display: inline; margin: 0 0 0 4px; font-size: 11.5px; }
+  body.simple #graph { height: clamp(104px, 16vh, 150px); height: clamp(104px, 16svh, 150px); }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition: none !important; }
@@ -472,27 +529,43 @@ input[type="range"] { width: 100%; margin: 0; accent-color: var(--c-current); cu
     <div class="stage-head">
       <div class="brand">
         <h1>발전기 가상 실험실</h1>
-        <span class="eyebrow">전자기 유도 · 교류와 직류</span>
+        <span class="eyebrow full-only">전자기 유도 · 교류와 직류</span>
+        <div class="seg small mode-seg" id="segViewMode" role="group" aria-label="보기 방식">
+          <button type="button" data-v="full" aria-pressed="true">자세히 보기</button>
+          <button type="button" data-v="simple" aria-pressed="false">간단히 보기</button>
+        </div>
         <div id="hint" class="hint">
           <span class="hint-fine">드래그로 시점 회전 · 휠로 확대 · 스페이스로 재생/정지 · ←/→로 15°씩</span>
           <span class="hint-coarse">한 손가락으로 시점 회전 · 두 손가락으로 확대</span>
           <button type="button" id="hintClose">닫기</button>
         </div>
       </div>
-      <p id="caption" class="caption" aria-live="polite">코일이 돌면 코일을 지나는 선속이 계속 바뀌어요. 그래서 유도 전류의 세기와 방향이 반 바퀴마다 바뀌는 교류가 흘러요.</p>
+      <p id="caption" class="caption full-only" aria-live="polite">코일이 돌면 코일을 지나는 선속이 계속 바뀌어요. 그래서 유도 전류의 세기와 방향이 반 바퀴마다 바뀌는 교류가 흘러요.</p>
       <p id="pausedChip" class="chip" hidden>일시정지 중 · 이 각도를 지나는 순간의 전류를 보여줘요</p>
     </div>
     <div id="loading" class="stage-msg" role="status"><span id="loadingText">3D 실험 장치를 불러오는 중이에요…</span></div>
   </section>
 
   <section id="data" aria-label="측정값과 그래프">
+    <div class="simple-top simple-only">
+      <button type="button" id="btnPlay2" class="btn primary play-wide">
+        <svg class="i-pause" viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="2" width="3.6" height="12" rx="1"></rect><rect x="9.4" y="2" width="3.6" height="12" rx="1"></rect></svg>
+        <svg class="i-play" viewBox="0 0 16 16" aria-hidden="true"><path d="M4.2 2.4v11.2a.7.7 0 0 0 1.06.6l9.1-5.6a.7.7 0 0 0 0-1.2l-9.1-5.6a.7.7 0 0 0-1.06.6z"></path></svg>
+        <span class="t">일시정지</span>
+      </button>
+      <ul class="keys" aria-label="3D 화면의 색">
+        <li><span class="sw-dots" style="--c: var(--c-current)"></span><span>코일에 흐르는 전류</span></li>
+        <li><span class="sw-arrow" style="--c: var(--c-vel)"></span><span>코일이 움직이는 방향</span></li>
+        <li><span class="sw-arrow" style="--c: var(--c-force)"></span><span>전류가 받는 자기력<small>회전을 방해해요</small></span></li>
+      </ul>
+    </div>
     <div class="data-head">
-      <h2>측정</h2>
-      <div class="seg small" id="segGraph" role="group" aria-label="그래프 가로축">
+      <h2><span class="full-only">측정</span><span class="simple-only">회전각에 따른 선속과 전류</span></h2>
+      <div class="seg small full-only" id="segGraph" role="group" aria-label="그래프 가로축">
         <button type="button" id="gAngle" data-v="angle" aria-pressed="true">각도</button>
         <button type="button" id="gTime" data-v="time" aria-pressed="false">시간</button>
       </div>
-      <button type="button" id="dataToggle" class="ghost" aria-expanded="true" aria-controls="dataBody">접기</button>
+      <button type="button" id="dataToggle" class="ghost full-only" aria-expanded="true" aria-controls="dataBody">접기</button>
     </div>
     <div id="dataBody" class="data-body">
       <div class="data-graph">
@@ -503,11 +576,11 @@ input[type="range"] { width: 100%; margin: 0; accent-color: var(--c-current); cu
         <div class="legend">
           <span class="key dash" style="--k: var(--g-phi)">자기 선속 Φ</span>
           <span class="key" style="--k: var(--g-ic)">코일 전류</span>
-          <span class="key dot" style="--k: var(--g-ie)">회로 전류</span>
+          <span class="key dot full-only" style="--k: var(--g-ie)">회로 전류</span>
           <span class="legend-note" id="graphNote">그래프를 끌어서 각도를 바꿀 수 있어요</span>
         </div>
       </div>
-      <div class="data-read">
+      <div class="data-read full-only">
         <div class="readouts">
           <span class="k">회전각 θ</span><span class="v" id="roTheta">35°</span><span class="bar unsigned" style="--k: var(--muted)"><i id="barTheta" style="width: 9.7%"></i></span>
           <span class="k">수직 유효 면적</span><span class="v" id="roArea">82%</span><span class="bar unsigned" style="--k: var(--c-area)"><i id="barArea" style="width: 82%"></i></span>
@@ -517,7 +590,7 @@ input[type="range"] { width: 100%; margin: 0; accent-color: var(--c-current); cu
           <span class="k">회로 전류</span><span class="v" id="roIe">+0.23</span><span class="bar" style="--k: var(--g-ie)"><i id="barIe" style="left: 50%; width: 11.5%"></i></span>
         </div>
       </div>
-      <div class="data-dirs">
+      <div class="data-dirs full-only">
         <div class="dirs">
           <div class="dir-row"><span class="dk">코일 속</span><div><b id="dirCoil">A → B → C → D</b><small id="dirCoilSub">AB는 앞→뒤, CD는 뒤→앞 (앞 = 브러시 쪽)</small></div></div>
           <div class="dir-row"><span class="dk">외부 회로</span><div><b id="dirExt">브러시 X → 검류계 → 전구 → 브러시 Y</b><small id="dirExtSub">검류계 바늘: 오른쪽(+)</small></div></div>
@@ -527,7 +600,7 @@ input[type="range"] { width: 100%; margin: 0; accent-color: var(--c-current); cu
     </div>
   </section>
 
-  <aside id="panel" aria-label="조작 패널">
+  <aside id="panel" class="full-only" aria-label="조작 패널">
     <section class="group">
       <h2>실험 조작</h2>
       <div class="transport">
@@ -661,6 +734,9 @@ const PHYS = {
   },
   // |Φ|가 늘면 +1, 줄면 −1
   absFluxTrend: (th, om) => -sgn(Math.cos(th) * Math.sin(th) * om),
+  // 긴 변이 받는 자기력 F = I·L × B의 y성분(상댓값). + 전류는 AB에서 앞→뒤(−z), CD에서 뒤→앞(+z)이고
+  // (∓ẑ) × x̂ = ∓ŷ 이므로 AB는 −s·I, CD는 +s·I. 두 힘의 돌림힘은 늘 회전과 반대(렌츠 법칙)
+  sideForceY: (side, th, om, s) => (side === 'AB' ? -1 : 1) * s * ((s * om * Math.sin(th)) / OMEGA_FULL),
 };
 // PHYSICS-END
 
@@ -679,6 +755,7 @@ const state = {
   omega: TAU * 0.4,
   time: 0,
   graphMode: 'angle',
+  simple: false, // 간단히 보기: 자석·코일·코일 전류·힘 방향과 그래프만
   show: { field: true, coilI: true, circuitI: true, induced: false, area: false, velocity: false, labels: true },
 };
 const GenLab = (window.GenLab = { PHYS, GEO, TAU, OMEGA_FULL, F_MAX, COMM_GAP, mod, sgn, state, reduceMotion });
@@ -686,6 +763,8 @@ const GenLab = (window.GenLab = { PHYS, GEO, TAU, OMEGA_FULL, F_MAX, COMM_GAP, m
 const $ = (sel) => document.querySelector(sel);
 const ui = {
   play: $('#btnPlay'), playText: $('#btnPlay .t'), prev: $('#btnPrev'), next: $('#btnNext'),
+  play2: $('#btnPlay2'), play2Text: $('#btnPlay2 .t'),
+  viewModeBtns: [...document.querySelectorAll('#segViewMode button')],
   theta: $('#rngTheta'), thetaOut: $('#outTheta'), speed: $('#rngSpeed'), speedOut: $('#outSpeed'),
   pole: $('#chkPole'), poleState: $('#poleState'),
   dirBtns: [...document.querySelectorAll('#segDir button')],
@@ -709,8 +788,10 @@ const ui = {
 // ── state changes ──
 function setPlaying(p) {
   state.playing = p;
-  ui.play.classList.toggle('is-paused', !p);
-  ui.playText.textContent = p ? '일시정지' : '재생';
+  for (const [btn, label] of [[ui.play, ui.playText], [ui.play2, ui.play2Text]]) {
+    btn.classList.toggle('is-paused', !p);
+    label.textContent = p ? '일시정지' : '재생';
+  }
   ui.paused.hidden = p;
 }
 let commFlashUntil = 0;
@@ -737,6 +818,7 @@ function setPressed(btns, match) {
 }
 
 ui.play.addEventListener('click', () => setPlaying(!state.playing));
+ui.play2.addEventListener('click', () => setPlaying(!state.playing));
 ui.prev.addEventListener('click', () => step(-1));
 ui.next.addEventListener('click', () => step(1));
 ui.theta.addEventListener('input', () => {
@@ -780,16 +862,20 @@ for (const b of ui.viewBtns) {
   });
 }
 GenLab.onUserOrbit = () => setPressed(ui.viewBtns, () => false);
-for (const b of ui.graphBtns) {
-  b.addEventListener('click', () => {
-    state.graphMode = b.dataset.v;
-    setPressed(ui.graphBtns, (x) => x === b);
-    ui.graphNote.textContent = state.graphMode === 'angle' ? '그래프를 끌어서 각도를 바꿀 수 있어요' : '최근 4초 기록';
-    ui.graph.setAttribute('aria-label', state.graphMode === 'angle'
-      ? '회전각에 따른 자기 선속, 코일 전류, 회로 전류 그래프'
-      : '최근 4초 동안의 자기 선속, 코일 전류, 회로 전류 그래프');
-  });
+GenLab.onViewSet = (name) => setPressed(ui.viewBtns, (x) => x.dataset.view === name);
+function graphLabel() {
+  if (state.simple) return '회전각에 따른 자기 선속과 코일 전류 그래프';
+  return state.graphMode === 'angle'
+    ? '회전각에 따른 자기 선속, 코일 전류, 회로 전류 그래프'
+    : '최근 4초 동안의 자기 선속, 코일 전류, 회로 전류 그래프';
 }
+function setGraphMode(m) {
+  state.graphMode = m;
+  setPressed(ui.graphBtns, (x) => x.dataset.v === m);
+  ui.graphNote.textContent = m !== 'angle' ? '최근 4초 기록' : state.simple ? '끌어서 각도를 바꿀 수 있어요' : '그래프를 끌어서 각도를 바꿀 수 있어요';
+  ui.graph.setAttribute('aria-label', graphLabel());
+}
+for (const b of ui.graphBtns) b.addEventListener('click', () => setGraphMode(b.dataset.v));
 function setDataOpen(open) {
   ui.dataBody.hidden = !open;
   ui.dataToggle.setAttribute('aria-expanded', String(open));
@@ -916,7 +1002,7 @@ function drawAngle(c, b, Y, d) {
   const om = d.om, s = state.s, comm = state.commutator;
   curve(c, X, Y, (t) => PHYS.flux(t, s), COL.phi, [6, 4]);
   curve(c, X, Y, (t) => PHYS.coilCurrent(t, om, s), COL.ic, []);
-  curve(c, X, Y, (t) => PHYS.extCurrent(t, om, s, comm), COL.ie, DOTTED);
+  if (!state.simple) curve(c, X, Y, (t) => PHYS.extCurrent(t, om, s, comm), COL.ie, DOTTED);
   c.fillStyle = COL.faint; c.font = TICK_FONT; c.textAlign = 'center'; c.textBaseline = 'top';
   for (let g = 0; g <= 360; g += 90) {
     c.fillText(g + '°', X(g), b.y1 + 4);
@@ -925,7 +1011,8 @@ function drawAngle(c, b, Y, d) {
   const deg = mod(d.th, TAU) / DEG;
   stroke(c, COL.text, [], 1.25);
   c.globalAlpha = 0.6; vline(c, X(deg), b.y0, b.y1); c.globalAlpha = 1;
-  dot(c, X(deg), Y(d.Phi), COL.phi); dot(c, X(deg), Y(d.Ic), COL.ic); dot(c, X(deg), Y(d.Ie), COL.ie);
+  dot(c, X(deg), Y(d.Phi), COL.phi); dot(c, X(deg), Y(d.Ic), COL.ic);
+  if (!state.simple) dot(c, X(deg), Y(d.Ie), COL.ie);
   if (hover.on) {
     const hd = clamp((hover.x - b.x0) / (b.x1 - b.x0), 0, 1) * 360;
     const t = hd * DEG;
@@ -940,7 +1027,7 @@ function drawTime(c, b, Y, d) {
   stroke(c, COL.rule, [2, 4], 1);
   for (let k = Math.ceil(now - WIN); k <= now; k++) { const x = X(k); if (x > b.x0 + 2) vline(c, x, b.y0, b.y1); }
   const start = (hist.head - hist.len + HMAX) % HMAX;
-  const series = [['phi', COL.phi, [6, 4]], ['ic', COL.ic, []], ['ie', COL.ie, DOTTED]];
+  const series = [['phi', COL.phi, [6, 4]], ['ic', COL.ic, []], ['ie', COL.ie, DOTTED]].filter(([key]) => !state.simple || key !== 'ie');
   for (const [key, color, dash] of series) {
     stroke(c, color, dash, dash === DOTTED ? 3 : 2);
     c.beginPath();
@@ -960,7 +1047,8 @@ function drawTime(c, b, Y, d) {
   c.textAlign = 'right'; c.fillText('지금', b.x1, b.y1 + 5);
   if (hist.len) {
     const j = (hist.head - 1 + HMAX) % HMAX;
-    dot(c, b.x1, Y(hist.phi[j]), COL.phi); dot(c, b.x1, Y(hist.ic[j]), COL.ic); dot(c, b.x1, Y(hist.ie[j]), COL.ie);
+    dot(c, b.x1, Y(hist.phi[j]), COL.phi); dot(c, b.x1, Y(hist.ic[j]), COL.ic);
+    if (!state.simple) dot(c, b.x1, Y(hist.ie[j]), COL.ie);
   }
   if (hover.on && hist.len) {
     const ht = now - ((b.x1 - clamp(hover.x, b.x0, b.x1)) / (b.x1 - b.x0)) * WIN;
@@ -983,9 +1071,11 @@ function fmtS(v) {
   return (v > 0 ? '+' : '−') + a.toFixed(2);
 }
 function showTip(x, head, v) {
-  const key = head + v.phi.toFixed(2) + v.ic.toFixed(2) + v.ie.toFixed(2);
+  const ext = !state.simple;
+  const key = head + v.phi.toFixed(2) + v.ic.toFixed(2) + (ext ? v.ie.toFixed(2) : '-');
   if (key !== tipKey) {
-    ui.tip.innerHTML = `<div>${head}</div><div><span class="tk">선속</span> ${fmtS(v.phi)}</div><div><span class="tk">코일 전류</span> ${fmtS(v.ic)}</div><div><span class="tk">회로 전류</span> ${fmtS(v.ie)}</div>`;
+    ui.tip.innerHTML = `<div>${head}</div><div><span class="tk">선속</span> ${fmtS(v.phi)}</div><div><span class="tk">코일 전류</span> ${fmtS(v.ic)}</div>`
+      + (ext ? `<div><span class="tk">회로 전류</span> ${fmtS(v.ie)}</div>` : '');
     tipKey = key;
   }
   ui.tip.hidden = false;
@@ -1096,6 +1186,34 @@ setTimeout(() => {
   }
 }, 15000);
 
+// ── simple view ──
+// 같은 페이지에서 조작 패널과 외부 회로를 숨기고 자석·코일·코일 전류·힘 방향과 그래프만 남긴다.
+// 주소 끝에 #simple을 붙이면 처음부터 이 화면으로 열린다.
+let fullGraphMode = state.graphMode;
+function setSimple(on) {
+  if (state.simple === on) return;
+  state.simple = on;
+  document.body.classList.toggle('simple', on);
+  setPressed(ui.viewModeBtns, (b) => (b.dataset.v === 'simple') === on);
+  if (on) {
+    fullGraphMode = state.graphMode;
+    setDataOpen(true);
+    setGraphMode('angle');
+  } else {
+    setGraphMode(fullGraphMode);
+  }
+  hover.on = false;
+  ui.tip.hidden = true;
+  tipKey = '';
+  if ((location.hash === '#simple') !== on) {
+    try { history.replaceState(null, '', on ? '#simple' : location.pathname + location.search); } catch (e) { /* history unavailable */ }
+  }
+  if (GenLab.onSimpleChange) GenLab.onSimpleChange(on);
+}
+for (const b of ui.viewModeBtns) b.addEventListener('click', () => setSimple(b.dataset.v === 'simple'));
+window.addEventListener('hashchange', () => setSimple(location.hash === '#simple'));
+if (location.hash === '#simple') setSimple(true);
+
 // ── main loop ──
 setPlaying(state.playing);
 updateSpeedOut();
@@ -1167,7 +1285,7 @@ function init() {
   const C = {
     bench: tok('--bench', '#0c1427'), field: tok('--c-field', '#7fdcff'), current: tok('--c-current', '#ffd23f'),
     induced: tok('--c-induced', '#ff8a3d'), area: tok('--c-area', '#b593ff'), vel: tok('--c-vel', '#5cf2a0'),
-    n: tok('--c-n', '#ec4a52'), s: tok('--c-s', '#4a83f2'),
+    force: tok('--c-force', '#ff4f7b'), n: tok('--c-n', '#ec4a52'), s: tok('--c-s', '#4a83f2'),
   };
 
   // ── renderer, scene, camera ──
@@ -1639,11 +1757,13 @@ function init() {
   }
   const filMat = new THREE.MeshStandardMaterial({ color: 0x5a4a3a, emissive: 0xffc46b, emissiveIntensity: 0, roughness: 0.6 });
   const filament = new THREE.Mesh(new THREE.TubeGeometry(new Helix(), 120, 0.01, 6, false), filMat);
+  // 빛은 전구 묶음 밖에 둔다. 간단히 보기에서 전구를 숨겨도 조명 개수가 그대로라 셰이더를 다시 만들지 않는다.
   const bulbLight = new THREE.PointLight(0xffc46b, 0, 7, 2);
-  bulbLight.position.y = 0.84;
+  bulbLight.position.set(BULB_X, TABLE_Y + 0.84, Z_FRONT);
+  scene.add(bulbLight);
   const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: 0xffc46b, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false }));
   glow.position.y = 0.84;
-  bulb.add(bulbBase, bulbCollar, glass, filament, bulbLight, glow);
+  bulb.add(bulbBase, bulbCollar, glass, filament, glow);
 
   // commutation sparks
   const sparkMat = new THREE.SpriteMaterial({ map: glowTex, color: 0xdff4ff, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false });
@@ -1694,9 +1814,9 @@ function init() {
   // ── induced field (orange) ──
   const inducedGroup = new THREE.Group();
   rotor.add(inducedGroup);
-  function makeArrow(color, shaftR, headR, headL) {
+  function makeArrow(color, shaftR, headR, headL, matOpts = {}) {
     const g = new THREE.Group();
-    const mat = new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 0.55, roughness: 0.4, metalness: 0 });
+    const mat = new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 0.55, roughness: 0.4, metalness: 0, ...matOpts });
     const shaft = new THREE.Mesh(new THREE.CylinderGeometry(shaftR, shaftR, 1, 16), mat);
     const head = new THREE.Mesh(new THREE.ConeGeometry(headR, headL, 24), mat);
     g.add(shaft, head);
@@ -1766,6 +1886,31 @@ function init() {
   rotor.add(coilFill);
   const cornerYZ = [[-H, ZF], [-H, -ZF], [H, -ZF], [H, ZF]];
 
+  // ── simple view: a closed coil, its current and the forces on its long sides ──
+  // 회로 없이 닫힌 코일. 경로는 앞쪽 변 가운데 → A → B → C → D → 앞쪽 변 가운데이고, 이 방향이 코일 전류의 + 방향이다.
+  const simpleGroup = new THREE.Group();
+  rotor.add(simpleGroup);
+  const simpleCurve = roundedPath([V3(0, 0, ZF), V3(0, -H, ZF), V3(0, -H, -ZF), V3(0, H, -ZF), V3(0, H, ZF), V3(0, 0, ZF)], 0.16);
+  const simpleLUT = makeLUT(simpleCurve);
+  simpleGroup.add(mesh(new THREE.TubeGeometry(simpleCurve, Math.ceil(simpleLUT.len * 28), 0.06, 10, true), M.copper));
+  for (const side of [-1, 1]) {
+    const stub = cylZ(0.05, 0.7, M.steel, 16); // 짧은 변 가운데에 붙은 회전축
+    stub.position.z = side * (ZF + 0.35);
+    simpleGroup.add(stub);
+  }
+  const simpleArrows = pathArrows(simpleGroup, simpleLUT, [V3(0, -H, -0.75), V3(0, -0.5, -ZF), V3(0, H, -0.75), V3(0, 0.5, ZF)], coilArrowGeo, coilArrowMat);
+  // 초록은 긴 변이 움직이는 방향(ω ẑ × r), 빨강은 긴 변의 전류가 받는 자기력. 둘 다 세계 좌표에 두고 매 프레임 옮긴다.
+  const simpleFx = new THREE.Group();
+  scene.add(simpleFx);
+  const FX_Z = 0.55, VEL_LEN = 0.95, FORCE_LEN = 1.25;
+  const fxMat = { emissiveIntensity: 0.8, envMapIntensity: 0.15, roughness: 0.6 }; // 반사광을 줄여 색이 또렷하게
+  const sideFx = [['AB', -H], ['CD', H]].map(([side, y]) => {
+    const vel = makeArrow(C.vel, 0.05, 0.13, 0.3, fxMat);
+    const force = makeArrow(C.force, 0.06, 0.15, 0.34, fxMat);
+    simpleFx.add(vel, force);
+    return { side, y, vel, force };
+  });
+
   // ── labels ──
   let axialView = false; // 축 방향(코일 정면)에서 볼 때는 회로 쪽 표시를 줄인다
   const labels = [];
@@ -1799,6 +1944,7 @@ function init() {
   const isMode = (m) => () => (state.commutator ? 'comm' : 'slip') === m;
   const lblPoleL = addLabel(scene, 'N극', V3(poleL.position.x, POLE_H / 2 + 0.45, 0), 'pole n', null, 10);
   const lblPoleR = addLabel(scene, 'S극', V3(poleR.position.x, POLE_H / 2 + 0.45, 0), 'pole s', null, 10);
+  lblPoleL.simple = lblPoleR.simple = true; // 간단히 보기에서는 자석 이름표만 남긴다
   addLabel(scene, '자기장 B', V3(-0.9, 1.5, -1.7), 'field', () => state.show.field && !axialView, 4);
   [['A', -H, ZF + 0.12], ['B', -H, -ZF - 0.12], ['C', H, -ZF - 0.12], ['D', H, ZF + 0.12]].forEach(([ch, y, z]) => {
     addLabel(rotor, ch, V3(0, y + Math.sign(y) * 0.32, z), 'corner', null, 8);
@@ -1822,14 +1968,15 @@ function init() {
   let curMode = 'slip';
   function applyMode() {
     curMode = state.commutator ? 'comm' : 'slip';
+    const full = !state.simple;
     for (const k of MODE_KEYS) {
-      const on = k === curMode;
+      const on = full && k === curMode;
       coilTubes[k].visible = on;
       extTubes[k].visible = on;
       brushSets[k].visible = on;
     }
-    slipGroup.visible = curMode === 'slip';
-    commGroup.visible = curMode === 'comm';
+    slipGroup.visible = full && curMode === 'slip';
+    commGroup.visible = full && curMode === 'comm';
   }
   let poleFlash = 0;
   function applyPoles() {
@@ -1847,6 +1994,20 @@ function init() {
   G.onPoleSwap = () => { applyPoles(); poleFlash = 1; };
   G.onCommutate = () => { spark = 0.4; };
 
+  // 간단히 보기: 축받침·손잡이·회로를 숨기고 닫힌 코일과 힘 화살표를 보인다
+  const fullOnly = [post, bearing, backShaft, frontShaft, wheel, knobArm, knob, galv, bulb];
+  function applySimple(on) {
+    for (const o of fullOnly) o.visible = !on;
+    simpleGroup.visible = simpleFx.visible = on;
+    if (on) {
+      for (const o of [fieldGroup, extDots, inducedGroup, velGroup, areaGroup, coilFill, ...sparks]) o.visible = false;
+      for (const k of MODE_KEYS) for (const a of [...coilArrows[k], ...extArrows[k]]) a.visible = false;
+      for (const mk of marks) mk.obj.visible = false;
+      bulbLight.intensity = 0;
+    }
+    applyMode();
+  }
+
   // ── views ──
   // 각 시점은 방향만 정해 두고, 거리는 화면 크기에 맞춰 계산한다.
   // 장치의 주요 지점들이 설명 글 아래의 빈 공간을 최대한 채우도록 맞춘다.
@@ -1854,6 +2015,9 @@ function init() {
     overview: { dir: [0.42, 0.545, 0.726], target: [0, -0.6, 1.3], fov: 36 },
     coil: { dir: [0, 0.15, 15.6], target: [0, 0, 0], fov: 24 },
     circuit: { dir: [0.8, 7.8, 9.1], target: [0, -1.4, 3.3], fov: 36 },
+    // 간단히 보기: 앞 왼쪽에서 조금 내려다본다. 자석이 코일 변을 가리지 않고,
+    // 화살표 뒤로 S극(파란 면)이 보여 빨간 힘 화살표가 N극 색에 묻히지 않는 각도
+    simple: { dir: [-0.226, 0.574, 0.787], target: [0, -0.4, 0], fov: 34 },
   };
   const MAG_TOP = POLE_H / 2 + 0.15; // 자석 윗면(N·S 글자가 있는 면)까지 보이게
   const magnetPts = [];
@@ -1868,8 +2032,9 @@ function init() {
     coil: [V3(-2.7, MAG_TOP, 0), V3(2.7, MAG_TOP, 0), V3(-2.7, -1.3, 0), V3(2.7, -1.3, 0),
       V3(-2.7, MAG_TOP, POLE_D / 2), V3(2.7, MAG_TOP, POLE_D / 2), V3(-2.7, -1.3, POLE_D / 2), V3(2.7, -1.3, POLE_D / 2)],
     circuit: [...circuitPts, V3(-1.2, 0.95, Z_COMM), V3(1.2, 0.95, Z_COMM)],
+    simple: [...magnetPts, V3(-2.1, 2.0, 0), V3(2.1, 2.0, 0), V3(0, 0, ZF + 0.75), V3(0, 0, -ZF - 0.75)],
   };
-  let currentView = 'overview', userMoved = false, tween = null;
+  let currentView = state.simple ? 'simple' : 'overview', userMoved = false, tween = null;
   const viewShift = { x: 0, y: 0 }; // 장면을 화면 안에서 옮기는 양(NDC)
   function applyViewShift() {
     const w = Math.max(1, view.clientWidth), h = Math.max(1, view.clientHeight);
@@ -1949,6 +2114,18 @@ function init() {
       start: performance.now(), dur: 950,
     };
   };
+  // 간단히 보기를 켜면 그 시점으로, 끄면 원래 보던 시점으로 돌아간다
+  let prevView = 'overview';
+  G.onSimpleChange = (on) => {
+    applySimple(on);
+    if (on) {
+      if (currentView !== 'simple') prevView = currentView;
+      G.setView('simple');
+    } else {
+      G.setView(prevView);
+      if (G.onViewSet) G.onViewSet(prevView);
+    }
+  };
   controls.addEventListener('start', () => {
     tween = null;
     userMoved = true;
@@ -2022,8 +2199,37 @@ function init() {
     if (PHYS.halfAt(0, Math.atan2(d0[1], d0[0])) !== 'D') issues.push('D쪽 도선이 D쪽 반원에 붙어 있지 않음');
     if (Math.abs(endpoint(sS, 0)[2] - Z_RING_A) > 1e-4 || Math.abs(endpoint(sS, sS.n)[2] - Z_RING_D) > 1e-4) issues.push('슬립 링 연결 위치 불일치');
     if (MODES.slip.zX !== Z_RING_D) issues.push('브러시 X가 D쪽 슬립 링에 닿아 있지 않음');
+    // 간단히 보기: 닫힌 코일의 실제 경로에서 dF = I·dl × B를 모아, 빨간 화살표의 방향과 돌림힘이 회전을 방해하는지 확인
+    const SP = simpleLUT.pos;
+    for (const s of [1, -1]) for (const w of [1, -1]) {
+      const om = w * TAU * 0.5;
+      for (let k = 0; k < 72; k++) {
+        const th = (k + 0.5) * (TAU / 72);
+        const c = Math.cos(th), sn = Math.sin(th);
+        if (Math.abs(sn) < 0.05) continue;
+        const ic = PHYS.coilCurrent(th, om, s);
+        let tz = 0, emf = 0;
+        const fy = { AB: 0, CD: 0 };
+        for (let i = 0; i < simpleLUT.n; i++) {
+          const a = i * 3, b = a + 3;
+          const lx = (SP[a] + SP[b]) / 2, ly = (SP[a + 1] + SP[b + 1]) / 2, dz = SP[b + 2] - SP[a + 2];
+          const mx = lx * c - ly * sn; // 국소 → 세계 x
+          const dFy = ic * s * dz; // B = s·x̂ 이면 dl × B = s·(0, dl_z, −dl_y)
+          tz += mx * dFy; // τ_z = x·F_y − y·F_x, F_x = 0
+          emf += -(om * mx) * s * dz;
+          if (ly < -0.9 * H) fy.AB += dFy;
+          else if (ly > 0.9 * H) fy.CD += dFy;
+        }
+        const at = `s=${s}, ω=${om.toFixed(2)}, θ=${(th * 180 / Math.PI).toFixed(1)}°`;
+        if (Math.sign(emf) !== Math.sign(ic)) issues.push(`간단히 보기: 닫힌 코일의 v×B 부호 불일치 (${at})`);
+        if (Math.sign(tz) !== -Math.sign(om)) issues.push(`간단히 보기: 자기력의 돌림힘이 회전을 돕는 쪽 (${at})`);
+        for (const side of ['AB', 'CD']) {
+          if (Math.sign(fy[side]) !== Math.sign(PHYS.sideForceY(side, th, om, s))) issues.push(`간단히 보기: ${side} 자기력 방향 불일치 (${at})`);
+        }
+      }
+    }
     if (issues.length) console.warn('[발전기 실험실] 자체 검증 실패', issues.slice(0, 10));
-    else console.info('[발전기 실험실] 자체 검증 통과: v×B 방향, 슬립 링·정류자 연결, 정류자 직류 부호 (2 모드 × 4 조합 × 72 각도)');
+    else console.info('[발전기 실험실] 자체 검증 통과: v×B 방향, 슬립 링·정류자 연결, 정류자 직류 부호 (2 모드 × 4 조합 × 72 각도), 간단히 보기의 자기력 방향과 돌림힘');
     G.selfCheck = { ok: issues.length === 0, issues };
   }
   selfCheck();
@@ -2057,6 +2263,45 @@ function init() {
     poleFlash = Math.max(0, poleFlash - dt * 2.4);
     poleMatL.emissiveIntensity = poleMatR.emissiveIntensity = poleFlash * 0.4;
 
+    if (state.simple) renderSimple(d, dt);
+    else renderFull(d, dt, mode);
+
+    for (const L of labels) L.obj.visible = state.simple ? !!L.simple : state.show.labels && (!L.cond || L.cond(d));
+
+    controls.update();
+    renderer.render(scene, camera);
+    labelRenderer.render(scene, camera);
+    declutter(now);
+  }
+
+  // 간단히 보기: 닫힌 코일의 전류, 긴 변의 운동 방향(초록)과 자기력(빨강)
+  let simpleOffset = 0;
+  function renderSimple(d, dt) {
+    simpleOffset = mod(simpleOffset + DOT_SPEED * d.Ic * dt, simpleLUT.len);
+    coilDots.visible = true;
+    placeDots(coilDots, simpleLUT, simpleOffset, 0.3);
+    const aC = clamp01(Math.abs(d.Ic) / 0.025);
+    coilArrowMat.opacity = aC;
+    const sC = 0.8 + 0.7 * Math.min(1, Math.abs(d.Ic) * 1.6);
+    for (const a of simpleArrows) {
+      a.visible = aC > 0.02;
+      if (a.visible) { a.quaternion.copy(d.Ic >= 0 ? a.userData.qPos : a.userData.qNeg); a.scale.setScalar(sC); }
+    }
+    const c = Math.cos(d.th), sn = Math.sin(d.th);
+    const vs = sgn(d.om) || 1;
+    const rel = Math.abs(sn); // 지금 속도에서 낼 수 있는 가장 큰 전류(힘)에 대한 비
+    for (const f of sideFx) {
+      const x = -f.y * sn, y = f.y * c; // 국소 (0, y) → 세계
+      const dv = f.side === 'AB' ? vs : -vs; // ω > 0이면 AB는 +n, CD는 −n 쪽으로 움직인다
+      setArrow(f.vel, x, y, FX_Z, dv * c, dv * sn, 0, VEL_LEN);
+      const fy = sgn(PHYS.sideForceY(f.side, d.th, d.om, state.s));
+      f.force.visible = rel > 0.04 && fy !== 0;
+      if (f.force.visible) setArrow(f.force, x, y, FX_Z, 0, fy, 0, FORCE_LEN * rel);
+    }
+  }
+
+  // 자세히 보기: 자기장, 코일·회로 전류, 검류계와 전구, 표시 옵션
+  function renderFull(d, dt, mode) {
     // field lines
     fieldGroup.visible = state.show.field || state.show.area;
     if (fieldGroup.visible) updateFieldColors(d.th);
@@ -2164,17 +2409,10 @@ function init() {
       if (sp.visible) sp.scale.setScalar(0.35 + 0.55 * sa + Math.random() * 0.1);
     }
     sparkMat.opacity = sa;
-
-    for (const L of labels) L.obj.visible = state.show.labels && (!L.cond || L.cond(d));
-
-    controls.update();
-    renderer.render(scene, camera);
-    labelRenderer.render(scene, camera);
-    declutter(now);
   }
 
-  applyMode();
   applyPoles();
+  applySimple(state.simple);
   G.render3D = render;
   document.getElementById('loading').hidden = true;
 }
